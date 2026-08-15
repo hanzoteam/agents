@@ -9,40 +9,13 @@ import (
 	"testing"
 
 	"github.com/mattermost/mattermost-plugin-agents/v2/embeddings"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
-	"github.com/mattermost/mattermost/server/public/model"
-	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
-	"github.com/mattermost/mattermost/server/public/pluginapi"
 	"github.com/stretchr/testify/require"
 )
-
-// createLicenseChecker creates a LicenseChecker with the specified license state
-func createLicenseChecker(t *testing.T, licensed bool) *enterprise.LicenseChecker {
-	t.Helper()
-	mockAPI := &plugintest.API{}
-	client := pluginapi.NewClient(mockAPI, nil)
-
-	config := &model.Config{}
-	mockAPI.On("GetConfig").Return(config).Maybe()
-
-	if licensed {
-		license := &model.License{}
-		license.Features = &model.Features{}
-		license.Features.SetDefaults()
-		license.SkuShortName = model.LicenseShortSkuEnterprise
-		mockAPI.On("GetLicense").Return(license).Maybe()
-	} else {
-		mockAPI.On("GetLicense").Return((*model.License)(nil)).Maybe()
-	}
-
-	return enterprise.NewLicenseChecker(client)
-}
 
 func TestInitEmbeddingsSearch(t *testing.T) {
 	tests := []struct {
 		name          string
 		cfg           embeddings.EmbeddingSearchConfig
-		licensed      bool
 		expectError   bool
 		errorContains string
 		validate      func(t *testing.T, search embeddings.EmbeddingSearch)
@@ -53,21 +26,10 @@ func TestInitEmbeddingsSearch(t *testing.T) {
 				Type:       "",
 				Dimensions: 1536,
 			},
-			licensed:    true,
 			expectError: false,
 			validate: func(t *testing.T, search embeddings.EmbeddingSearch) {
 				require.Nil(t, search)
 			},
-		},
-		{
-			name: "missing license returns license error",
-			cfg: embeddings.EmbeddingSearchConfig{
-				Type:       embeddings.SearchTypeComposite,
-				Dimensions: 1536,
-			},
-			licensed:      false,
-			expectError:   true,
-			errorContains: "without a valid license",
 		},
 		{
 			name: "zero dimensions returns dimension error",
@@ -75,7 +37,6 @@ func TestInitEmbeddingsSearch(t *testing.T) {
 				Type:       embeddings.SearchTypeComposite,
 				Dimensions: 0,
 			},
-			licensed:      true,
 			expectError:   true,
 			errorContains: "embedding dimensions must be greater than 0",
 		},
@@ -85,7 +46,6 @@ func TestInitEmbeddingsSearch(t *testing.T) {
 				Type:       embeddings.SearchTypeComposite,
 				Dimensions: -100,
 			},
-			licensed:      true,
 			expectError:   true,
 			errorContains: "embedding dimensions must be greater than 0",
 		},
@@ -95,7 +55,6 @@ func TestInitEmbeddingsSearch(t *testing.T) {
 				Type:       "unknown-search-type",
 				Dimensions: 1536,
 			},
-			licensed:      true,
 			expectError:   true,
 			errorContains: "unsupported search type",
 		},
@@ -106,9 +65,8 @@ func TestInitEmbeddingsSearch(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			licenseChecker := createLicenseChecker(t, tc.licensed)
 
-			search, err := InitEmbeddingsSearch(nil, &http.Client{}, tc.cfg, licenseChecker, false)
+			search, err := InitEmbeddingsSearch(nil, &http.Client{}, tc.cfg, false)
 
 			if tc.expectError {
 				require.Error(t, err)

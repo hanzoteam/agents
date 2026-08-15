@@ -19,7 +19,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-agents/v2/conversations"
 	"github.com/mattermost/mattermost-plugin-agents/v2/embeddings"
 	"github.com/mattermost/mattermost-plugin-agents/v2/embeddings/mocks"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llmcontext"
 	"github.com/mattermost/mattermost-plugin-agents/v2/mcp"
@@ -513,8 +512,7 @@ func (t *testPluginAPI) PluginHTTP(req *http.Request) *http.Response {
 
 // createTestBots creates a test MMBots instance for testing
 func createTestBots(mockAPI *plugintest.API, client *pluginapi.Client) *bots.MMBots {
-	licenseChecker := enterprise.NewLicenseChecker(client)
-	testBots := bots.New(mockAPI, client, licenseChecker, nil, nil, &http.Client{}, nil)
+	testBots := bots.New(mockAPI, client, nil, nil, &http.Client{}, nil)
 	return testBots
 }
 
@@ -569,12 +567,9 @@ func SetupTestEnvironment(t *testing.T) *TestEnvironment {
 		mockAPI.On("LogError", args...).Maybe()
 	}
 
-	// Mock GetConfig and GetLicense for WithLLMContextServerInfo and the
-	// context builder's remote-MCP license gate. Default to a licensed
-	// server so remote MCP tools are supplied; tests asserting unlicensed
-	// behavior override via OverrideLicense.
+	// WithLLMContextServerInfo reads both.
 	mockAPI.On("GetConfig").Return(&model.Config{}).Maybe()
-	mockAPI.On("GetLicense").Return(&model.License{SkuShortName: model.LicenseShortSkuEnterprise}).Maybe()
+	mockAPI.On("GetLicense").Return(&model.License{}).Maybe()
 
 	conversationsService := conversations.New(
 		llmPrompts,
@@ -582,7 +577,6 @@ func SetupTestEnvironment(t *testing.T) *TestEnvironment {
 		nil,
 		contextBuilder,
 		testBots,
-		nil,
 		nil,
 		nil,
 		nil,
@@ -600,7 +594,6 @@ func SetupTestEnvironment(t *testing.T) *TestEnvironment {
 		contextBuilder,
 		cfg,
 		llmPrompts,
-		nil,
 		nil,
 		nil,
 		nil,
@@ -967,7 +960,7 @@ func TestHandleGetAIBots(t *testing.T) {
 			name: "search enabled - non-nil service with non-nil embedding search",
 			searchService: func() *search.Search {
 				me := mocks.NewMockEmbeddingSearch(t)
-				return search.New(func() embeddings.EmbeddingSearch { return me }, nil, nil, nil, nil, nil)
+				return search.New(func() embeddings.EmbeddingSearch { return me }, nil, nil, nil, nil)
 			}(),
 			expectedSearchEnabled:    true,
 			expectedAllowUnsafeLinks: false,
@@ -978,7 +971,7 @@ func TestHandleGetAIBots(t *testing.T) {
 		},
 		{
 			name:                     "search disabled - non-nil service with nil embedding search",
-			searchService:            search.New(nil, nil, nil, nil, nil, nil),
+			searchService:            search.New(nil, nil, nil, nil, nil),
 			expectedSearchEnabled:    false,
 			expectedAllowUnsafeLinks: false,
 			expectedStatus:           http.StatusOK,
@@ -1187,7 +1180,6 @@ func TestToolCallDMAllowedWhenChannelToolCallingDisabled(t *testing.T) {
 
 			e.setupTestBot(llm.BotConfig{Name: "permtest", DisplayName: "Permission Bot"})
 
-			e.api.licenseChecker = enterprise.NewLicenseChecker(e.client)
 			e.OverrideLicense(&model.License{SkuShortName: "advanced"})
 
 			post := &model.Post{

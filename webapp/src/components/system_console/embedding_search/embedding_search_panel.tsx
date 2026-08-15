@@ -5,10 +5,7 @@ import React from 'react';
 import {useIntl, FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
-import {useIsBasicsLicensed} from '@/license';
-
 import {Pill} from '../../pill';
-import EnterpriseChip from '../enterprise_chip';
 import Panel from '../panel';
 import {BooleanItem, ItemList, SelectionItem, SelectionItemOption} from '../item';
 import {IntItem} from '../number_items';
@@ -52,7 +49,6 @@ interface Props {
 
 const EmbeddingSearchPanel = ({value, onChange}: Props) => {
     const intl = useIntl();
-    const isBasicsLicensed = useIsBasicsLicensed();
     const effectiveType = value.type || '';
     const isEnabled = effectiveType !== '';
 
@@ -95,25 +91,6 @@ const EmbeddingSearchPanel = ({value, onChange}: Props) => {
         }
     }
     const hasLocalModelMismatch = localMismatchReason !== '';
-
-    if (!isBasicsLicensed) {
-        return (
-            <Panel
-                title={
-                    <Horizontal>
-                        <FormattedMessage defaultMessage='Embedding Search'/>
-                        <Pill><FormattedMessage defaultMessage='EXPERIMENTAL'/></Pill>
-                    </Horizontal>
-                }
-                subtitle={''}
-            >
-                <EnterpriseChip
-                    text={intl.formatMessage({defaultMessage: 'Embedding search is available on qualifying Mattermost plans'})}
-                    subtext={intl.formatMessage({defaultMessage: 'Embedding search is available on qualifying Mattermost plans'})}
-                />
-            </Panel>
-        );
-    }
 
     return (
         <Panel

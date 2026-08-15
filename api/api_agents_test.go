@@ -15,11 +15,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mattermost/mattermost-plugin-agents/v2/config"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
-	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -32,7 +30,6 @@ func setupAgentTestEnvironment(t *testing.T) *TestEnvironment {
 	e := SetupTestEnvironment(t)
 
 	// Wire up a real license checker so license checks can be mocked
-	e.api.licenseChecker = enterprise.NewLicenseChecker(e.client)
 
 	// Seed a config store with one service so service validation passes
 	e.api.configStore = &mockConfigStore{
@@ -61,40 +58,6 @@ func (m *mockConfigStore) GetConfig() (*config.Config, error) {
 
 func (m *mockConfigStore) SaveConfig(cfg config.Config) error {
 	return nil
-}
-
-// overrideLicenseMocks replaces any GetConfig/GetLicense expectations already
-// registered (e.g. by SetupTestEnvironment). Testify matches the first
-// registered expectation, so simply adding new ones would not take effect.
-func overrideLicenseMocks(mockAPI *plugintest.API, license *model.License) {
-	filtered := make([]*mock.Call, 0, len(mockAPI.ExpectedCalls))
-	for _, call := range mockAPI.ExpectedCalls {
-		if call.Method != "GetLicense" && call.Method != "GetConfig" {
-			filtered = append(filtered, call)
-		}
-	}
-	mockAPI.ExpectedCalls = filtered
-	mockAPI.On("GetConfig").Return(&model.Config{
-		ServiceSettings: model.ServiceSettings{
-			SiteURL: model.NewPointer("http://localhost"),
-		},
-	}).Maybe()
-	mockAPI.On("GetLicense").Return(license).Maybe()
-}
-
-// mockLicensed sets up mock expectations so IsMultiLLMLicensed() returns true.
-func mockLicensed(mockAPI *plugintest.API) {
-	overrideLicenseMocks(mockAPI, &model.License{
-		Features: &model.Features{
-			LDAP: model.NewPointer(true),
-		},
-		SkuShortName: model.LicenseShortSkuEnterprise,
-	})
-}
-
-// mockUnlicensed sets up mock expectations so IsMultiLLMLicensed() returns false.
-func mockUnlicensed(mockAPI *plugintest.API) {
-	overrideLicenseMocks(mockAPI, nil)
 }
 
 func doRequest(api *API, method, path string, body interface{}, userID string) *httptest.ResponseRecorder {
@@ -168,7 +131,6 @@ func TestCreateAgentWithPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("CreateBot", mock.AnythingOfType("*model.Bot")).Return(&model.Bot{
 		UserId:      "bot-user-id-created",
@@ -202,7 +164,6 @@ func TestCreateAgentPersistsExplicitRequestValues(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("CreateBot", mock.AnythingOfType("*model.Bot")).Return(&model.Bot{
 		UserId:      "bot-user-id-created",
@@ -277,7 +238,6 @@ func TestCreateAgentMaxToolTurnsRoundTrip(t *testing.T) {
 			e := setupAgentTestEnvironment(t)
 			defer e.Cleanup(t)
 
-			mockLicensed(e.mockAPI)
 			e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 			if tt.expectStoredCall {
 				e.mockAPI.On("CreateBot", mock.AnythingOfType("*model.Bot")).Return(&model.Bot{
@@ -308,7 +268,6 @@ func TestCreateAgentAutoEnableAllMCPTools(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("CreateBot", mock.AnythingOfType("*model.Bot")).Return(&model.Bot{
 		UserId:      "bot-user-id-created",
@@ -356,7 +315,6 @@ func TestCreateAgentMCPDynamicToolLoading(t *testing.T) {
 			e := setupAgentTestEnvironment(t)
 			defer e.Cleanup(t)
 
-			mockLicensed(e.mockAPI)
 			e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 			e.mockAPI.On("CreateBot", mock.AnythingOfType("*model.Bot")).Return(&model.Bot{
 				UserId:      "bot-user-id-created",
@@ -385,7 +343,6 @@ func TestCreateAgentNoMCPToolsByDefault(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("CreateBot", mock.AnythingOfType("*model.Bot")).Return(&model.Bot{
 		UserId:      "bot-user-id-created",
@@ -413,7 +370,6 @@ func TestCreateAgentEnabledMCPToolsAllowlist(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("CreateBot", mock.AnythingOfType("*model.Bot")).Return(&model.Bot{
 		UserId:      "bot-user-id-created",
@@ -445,7 +401,6 @@ func TestCreateAgentForbiddenWithoutManageOwnPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageSystem).Return(false)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
@@ -463,7 +418,6 @@ func TestCreateAgentWithoutPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageSystem).Return(false)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
@@ -472,86 +426,10 @@ func TestCreateAgentWithoutPermission(t *testing.T) {
 	require.Equal(t, http.StatusForbidden, recorder.Result().StatusCode)
 }
 
-func TestCreateAgentFreeTierAllowsFirstAgent(t *testing.T) {
-	e := setupAgentTestEnvironment(t)
-	defer e.Cleanup(t)
-
-	mockUnlicensed(e.mockAPI)
-	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
-	e.mockAPI.On("CreateBot", mock.AnythingOfType("*model.Bot")).Return(&model.Bot{
-		UserId:      "bot-user-id-created",
-		Username:    "my-agent",
-		DisplayName: "My Agent",
-		Description: "User-created AI agent",
-	}, nil)
-	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
-
-	recorder := doRequest(e.api, http.MethodPost, "/agents", createAgentBody(nil), testUserID)
-	require.Equal(t, http.StatusCreated, recorder.Result().StatusCode)
-}
-
-func TestCreateAgentFreeTierBlocksWhenQuotaReached(t *testing.T) {
-	e := setupAgentTestEnvironment(t)
-	defer e.Cleanup(t)
-
-	mockUnlicensed(e.mockAPI)
-	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
-	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
-
-	// One existing agent is already at the free-tier quota.
-	e.agentStore.agents["existing"] = &llm.BotConfig{
-		ID: "existing", CreatorID: "someone-else", Name: "existing", DisplayName: "Existing",
-	}
-
-	recorder := doRequest(e.api, http.MethodPost, "/agents", createAgentBody(nil), testUserID)
-	require.Equal(t, http.StatusForbidden, recorder.Result().StatusCode)
-}
-
-func TestListAgentsIncludesActiveCountHeaderWhenUnlicensed(t *testing.T) {
-	e := setupAgentTestEnvironment(t)
-	defer e.Cleanup(t)
-
-	mockUnlicensed(e.mockAPI)
-	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
-
-	e.agentStore.agents["agent-1"] = &llm.BotConfig{
-		ID: "agent-1", CreatorID: "other-user", DisplayName: "Private Agent",
-		UserAccessLevel: llm.UserAccessLevelNone,
-	}
-
-	recorder := doRequest(e.api, http.MethodGet, "/agents", nil, testUserID)
-	resp := recorder.Result()
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "1", resp.Header.Get(AgentActiveCountHeader))
-
-	var agents []*llm.BotConfig
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&agents))
-	assert.Empty(t, agents)
-}
-
-func TestListAgentsOmitsActiveCountHeaderWhenCountFails(t *testing.T) {
-	e := setupAgentTestEnvironment(t)
-	defer e.Cleanup(t)
-
-	mockUnlicensed(e.mockAPI)
-	e.mockAPI.On("LogWarn", mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
-	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
-
-	e.agentStore.countErr = errors.New("boom")
-
-	recorder := doRequest(e.api, http.MethodGet, "/agents", nil, testUserID)
-	resp := recorder.Result()
-
-	// A count failure must not fail the list request; the header is simply omitted.
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Empty(t, resp.Header.Get(AgentActiveCountHeader))
-}
-
 func TestListAgentsFiltersByAccess(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	// sanitizeAgentForUser → canManageAgent checks PermissionManageOthersAgent for each accessible agent.
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(false).Maybe()
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
@@ -584,7 +462,6 @@ func TestUpdateAgentAsCreator(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 	stored := &llm.BotConfig{
@@ -610,7 +487,6 @@ func TestUpdateAgentAsAdminUser(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 	stored := &llm.BotConfig{
@@ -630,7 +506,6 @@ func TestUpdateAgentAsNonAdmin(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(false)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -650,7 +525,6 @@ func TestUpdateAgentOwnedByOtherWithManageOthersPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -675,7 +549,6 @@ func TestDeleteAgentDeactivatesBot(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	// When EnsureBots succeeds, handleDeleteAgent skips explicit UpdateActive (EnsureBots reconciles).
 	e.mockAPI.On("UpdateBotActive", "bot-1", false).Return(&model.Bot{}, nil).Maybe()
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
@@ -698,7 +571,6 @@ func TestListServicesNoSecrets(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -724,7 +596,6 @@ func TestUpdateMigratedAgentWithManageOthersPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -749,7 +620,6 @@ func TestUpdateMigratedAgentForbiddenWithoutManageOthersPermission(t *testing.T)
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageSystem).Return(false)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
@@ -770,7 +640,6 @@ func TestUpdateMigratedAgentWithManageSystemPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageSystem).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
@@ -797,7 +666,6 @@ func TestFetchModelsForServiceMissingCredentials(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -810,7 +678,6 @@ func TestFetchModelsForServiceUnknownService(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -834,7 +701,6 @@ func TestFetchModelsForServiceVertexMissingProject(t *testing.T) {
 		},
 	}
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -857,7 +723,6 @@ func TestFetchModelsForServiceGeminiMissingAPIKey(t *testing.T) {
 		},
 	}
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -870,7 +735,6 @@ func TestListServicesForbiddenWithoutManageOwnPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageSystem).Return(false)
@@ -884,7 +748,6 @@ func TestFetchModelsForbiddenWithoutManageOwnPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageSystem).Return(false)
@@ -899,7 +762,6 @@ func TestListServicesWithManageOthersPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
@@ -912,7 +774,6 @@ func TestFetchModelsForServiceWithManageOthersPermission(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(false)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(true)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
@@ -926,7 +787,6 @@ func TestUpdateAgentUsernameChangeForbidden(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 	stored := &llm.BotConfig{
@@ -945,7 +805,6 @@ func TestUpdateAgentInvalidServiceID(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 	stored := &llm.BotConfig{
@@ -964,7 +823,6 @@ func TestUpdateAgentFlipsAutoEnableOff(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 	stored := &llm.BotConfig{
@@ -1028,7 +886,6 @@ func TestUpdateAgentMCPDynamicToolLoading(t *testing.T) {
 			e := setupAgentTestEnvironment(t)
 			defer e.Cleanup(t)
 
-			mockLicensed(e.mockAPI)
 			e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 			stored := &llm.BotConfig{
@@ -1065,7 +922,6 @@ func TestGetAgentMCPDynamicToolLoadingRoundTrip(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(false).Maybe()
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -1091,7 +947,6 @@ func TestListAgentsMCPDynamicToolLoadingRoundTrip(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(false).Maybe()
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -1129,7 +984,6 @@ func TestUpdateAgentEmptyAllowlistAllowsNone(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 	stored := &llm.BotConfig{
@@ -1163,7 +1017,6 @@ func TestUpdateAgentFullReplacementOverwritesMutableFields(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
 
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("PatchBot", "bot-1", mock.AnythingOfType("*model.BotPatch")).Return(&model.Bot{}, nil).Maybe()
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -1239,7 +1092,6 @@ func TestAgentSaveErrorsAreActionable(t *testing.T) {
 		{
 			name: "create rejects oversized custom instructions",
 			setup: func(_ *testing.T, e *TestEnvironment) (string, string, any) {
-				mockLicensed(e.mockAPI)
 				e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true).Maybe()
 				e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -1258,7 +1110,6 @@ func TestAgentSaveErrorsAreActionable(t *testing.T) {
 		{
 			name: "create rejects invalid username",
 			setup: func(_ *testing.T, e *TestEnvironment) (string, string, any) {
-				mockLicensed(e.mockAPI)
 				e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true).Maybe()
 				e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -1271,7 +1122,6 @@ func TestAgentSaveErrorsAreActionable(t *testing.T) {
 		{
 			name: "create rejects unknown service id",
 			setup: func(_ *testing.T, e *TestEnvironment) (string, string, any) {
-				mockLicensed(e.mockAPI)
 				e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true).Maybe()
 				e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -1284,7 +1134,6 @@ func TestAgentSaveErrorsAreActionable(t *testing.T) {
 		{
 			name: "create returns reason when user lacks permission",
 			setup: func(_ *testing.T, e *TestEnvironment) (string, string, any) {
-				mockLicensed(e.mockAPI)
 				e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(false)
 				e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageSystem).Return(false)
 				e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
@@ -1297,7 +1146,6 @@ func TestAgentSaveErrorsAreActionable(t *testing.T) {
 		{
 			name: "update rejects oversized custom instructions",
 			setup: func(_ *testing.T, e *TestEnvironment) (string, string, any) {
-				mockLicensed(e.mockAPI)
 				e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 				stored := &llm.BotConfig{
@@ -1321,7 +1169,6 @@ func TestAgentSaveErrorsAreActionable(t *testing.T) {
 		{
 			name: "update rejects username change",
 			setup: func(_ *testing.T, e *TestEnvironment) (string, string, any) {
-				mockLicensed(e.mockAPI)
 				e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 				stored := &llm.BotConfig{
@@ -1339,7 +1186,6 @@ func TestAgentSaveErrorsAreActionable(t *testing.T) {
 		{
 			name: "create sanitizes internal server error responses",
 			setup: func(_ *testing.T, e *TestEnvironment) (string, string, any) {
-				mockLicensed(e.mockAPI)
 				e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOwnAgent).Return(true).Maybe()
 				e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -1352,7 +1198,6 @@ func TestAgentSaveErrorsAreActionable(t *testing.T) {
 		{
 			name: "update returns reason when caller cannot manage agent",
 			setup: func(_ *testing.T, e *TestEnvironment) (string, string, any) {
-				mockLicensed(e.mockAPI)
 				e.mockAPI.On("HasPermissionTo", testUserID, model.PermissionManageOthersAgent).Return(false)
 				e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
@@ -1521,7 +1366,6 @@ func TestBotConfigIsCreatorIsAdmin(t *testing.T) {
 func TestCanUserAccessAgentCreatorAdminBypass(t *testing.T) {
 	e := setupAgentTestEnvironment(t)
 	defer e.Cleanup(t)
-	mockLicensed(e.mockAPI)
 	e.mockAPI.On("LogError", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 	// Agent that normally blocks every user, but grants access to creator + admin.

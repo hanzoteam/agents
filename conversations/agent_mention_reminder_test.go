@@ -10,7 +10,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-agents/v2/bots"
 	"github.com/mattermost/mattermost-plugin-agents/v2/conversation"
 	"github.com/mattermost/mattermost-plugin-agents/v2/conversations"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/i18n"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llmcontext"
@@ -61,9 +60,8 @@ func newReminderFixtureWithBotConfig(t *testing.T, botConfig llm.BotConfig) *rem
 	mockAPI.On("GetTeam", mock.Anything).Return(&model.Team{Id: reminderTeamID, Name: "team"}, nil).Maybe()
 	mockAPI.On("LogDebug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe().Return()
 	pluginClient := pluginapi.NewClient(mockAPI, nil)
-	licenseChecker := enterprise.NewLicenseChecker(pluginClient)
 
-	botService := bots.New(mockAPI, pluginClient, licenseChecker, nil, nil, &http.Client{}, nil)
+	botService := bots.New(mockAPI, pluginClient, nil, nil, &http.Client{}, nil)
 	bot := bots.NewBot(
 		botConfig,
 		llm.ServiceConfig{},
@@ -85,7 +83,7 @@ func newReminderFixtureWithBotConfig(t *testing.T, botConfig llm.BotConfig) *rem
 		channels: map[string]*model.Channel{},
 	}
 
-	conv := conversations.New(promptsManager, client, nil, contextBuilder, botService, nil, licenseChecker, i18n.Init(), nil, &testToolCallingConfig{})
+	conv := conversations.New(promptsManager, client, nil, contextBuilder, botService, nil, i18n.Init(), nil, &testToolCallingConfig{})
 	conv.SetConversationService(conversation.NewService(newFakeConvStore(), promptsManager, client, botService))
 
 	return &reminderFixture{

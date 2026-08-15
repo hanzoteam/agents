@@ -13,12 +13,8 @@ import {getMCPTools, getVettedToolSeed} from '../../client';
 
 import manifest from '@/manifest';
 
-import {useIsBasicsLicensed} from '@/license';
-
 import {CopyableTextItem} from './copyable_text_item';
 import MCPToolsViewer, {MCPToolsResponse} from './mcp_tools_viewer';
-
-import EnterpriseChip from './enterprise_chip';
 
 import {BooleanItem, ItemList, TextItem} from './item';
 
@@ -355,7 +351,6 @@ const MCPServer = ({
 // Main component for MCP servers configuration
 const MCPServers = ({mcpConfig, onChange}: Props) => {
     const intl = useIntl();
-    const isBasicsLicensed = useIsBasicsLicensed();
     const [activeTab, setActiveTab] = useState<'config' | 'tools'>('config');
     const [preloadedToolsData, setPreloadedToolsData] = useState<MCPToolsResponse | null>(null);
     const [idleTimeoutInputValue, setIdleTimeoutInputValue] = useState<string>(() => getIdleTimeoutInputValue(mcpConfig?.idleTimeoutMinutes));
@@ -553,52 +548,38 @@ const MCPServers = ({mcpConfig, onChange}: Props) => {
                                 }}
                                 helptext={intl.formatMessage({defaultMessage: 'How long to keep an inactive user connection open before closing it automatically. Lower values save resources, higher values improve response times. Default: 30 minutes'})}
                             />
-                            {isBasicsLicensed && (
-                                <CopyableTextItem
-                                    label={intl.formatMessage({defaultMessage: 'MCP OAuth Callback URL'})}
-                                    value={oauthCallbackURL}
-                                    helptext={intl.formatMessage({defaultMessage: 'Register this redirect URI in the remote MCP server\u2019s OAuth application so authorization callbacks return to this Mattermost instance.'})}
-                                />
-                            )}
+                            <CopyableTextItem
+                                label={intl.formatMessage({defaultMessage: 'MCP OAuth Callback URL'})}
+                                value={oauthCallbackURL}
+                                helptext={intl.formatMessage({defaultMessage: 'Register this redirect URI in the remote MCP server\u2019s OAuth application so authorization callbacks return to this Mattermost instance.'})}
+                            />
                         </ItemList>
-                        {isBasicsLicensed ? (
-                            <>
-                                <ServersList>
-                                    {!Array.isArray(normalizedServers) || normalizedServers.length < 1 ? (
-                                        <EmptyState>
-                                            <FormattedMessage defaultMessage='No remote MCP servers configured. Add a server to connect to external MCP tools.'/>
-                                        </EmptyState>
-                                    ) : (
-                                        normalizedServers.map((serverConfig, index) => (
-                                            <MCPServer
-                                                key={index}
-                                                serverIndex={index}
-                                                serverConfig={serverConfig}
-                                                onChange={updateServer}
-                                                onDelete={() => deleteServer(index)}
-                                            />
-                                        ))
-                                    )}
-                                </ServersList>
+                        <ServersList>
+                            {!Array.isArray(normalizedServers) || normalizedServers.length < 1 ? (
+                                <EmptyState>
+                                    <FormattedMessage defaultMessage='No remote MCP servers configured. Add a server to connect to external MCP tools.'/>
+                                </EmptyState>
+                            ) : (
+                                normalizedServers.map((serverConfig, index) => (
+                                    <MCPServer
+                                        key={index}
+                                        serverIndex={index}
+                                        serverConfig={serverConfig}
+                                        onChange={updateServer}
+                                        onDelete={() => deleteServer(index)}
+                                    />
+                                ))
+                            )}
+                        </ServersList>
 
-                                <AddServerContainer>
-                                    <TertiaryButton
-                                        onClick={addServer}
-                                    >
-                                        <PlusServerIcon/>
-                                        <FormattedMessage defaultMessage='Add Remote MCP Server'/>
-                                    </TertiaryButton>
-                                </AddServerContainer>
-                            </>
-                        ) : (
-                            <EnterpriseChipRow>
-                                <EnterpriseChip
-                                    title={intl.formatMessage({defaultMessage: 'Licensed feature'})}
-                                    text={intl.formatMessage({defaultMessage: 'Use remote MCP servers on qualifying Mattermost plans'})}
-                                    subtext={intl.formatMessage({defaultMessage: 'Remote MCP servers require a qualifying Mattermost plan'})}
-                                />
-                            </EnterpriseChipRow>
-                        )}
+                        <AddServerContainer>
+                            <TertiaryButton
+                                onClick={addServer}
+                            >
+                                <PlusServerIcon/>
+                                <FormattedMessage defaultMessage='Add Remote MCP Server'/>
+                            </TertiaryButton>
+                        </AddServerContainer>
                     </>
                 )}
 
@@ -835,14 +816,6 @@ const EmptyState = styled.div`
     color: rgba(var(--center-channel-color-rgb), 0.64);
     background-color: rgba(var(--center-channel-color-rgb), 0.04);
     border-radius: 4px;
-`;
-
-const EnterpriseChipRow = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    margin-top: 16px;
-    margin-bottom: 16px;
 `;
 
 const ServerNameInput = styled.input`

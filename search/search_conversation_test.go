@@ -301,7 +301,6 @@ func TestSearchQueryCreatesConversation(t *testing.T) {
 				mockClient,
 				promptsObj,
 				nil,
-				nil,
 				convService,
 			)
 
@@ -357,7 +356,6 @@ func TestSearchQueryToolsAlwaysDisabled(t *testing.T) {
 		mockClient,
 		promptsObj,
 		nil,
-		nil,
 		convService,
 	)
 
@@ -406,7 +404,6 @@ func TestSearchQueryUsesConversationCompletionRequest(t *testing.T) {
 		mockClient,
 		promptsObj,
 		nil,
-		nil,
 		convService,
 	)
 
@@ -448,7 +445,6 @@ func TestSearchQueryNilConversationServiceFallsBack(t *testing.T) {
 		func() embeddings.EmbeddingSearch { return mockEmbedding },
 		mockClient,
 		promptsObj,
-		nil,
 		nil,
 		nil,
 	)

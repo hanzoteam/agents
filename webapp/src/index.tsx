@@ -48,7 +48,6 @@ import {shouldSuppressBotNotification} from './notifications';
 import AgentsTour from './components/tutorial/agents_tour';
 import AgentsPage, {AGENTS_ROUTE} from './components/agents/agents_page';
 import IconAI from './components/assets/icon_ai';
-import {isEnterpriseLicensedOrDevelopment} from './license';
 
 type WebappStore = Store<GlobalState, UnknownAction>
 
@@ -269,15 +268,6 @@ export default class Plugin {
         // Register slash commands
         if (rhs) {
             registry.registerSlashCommandWillBePostedHook((message: string, args: any) => {
-                if ((message.startsWith('/ask-channel') || message.startsWith('/summarize-channel')) &&
-                    !isEnterpriseLicensedOrDevelopment(store.getState())) {
-                    return {
-                        error: {
-                            message: 'The /ask-channel and /summarize-channel commands are available on Enterprise plans.',
-                        },
-                    };
-                }
-
                 if (message.startsWith('/ask-channel')) {
                     const query = message.replace('/ask-channel', '').trim();
                     return handleAskChannelCommand(query, args, store, rhs);

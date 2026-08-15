@@ -15,7 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mattermost/mattermost-plugin-agents/v2/bots"
 	"github.com/mattermost/mattermost-plugin-agents/v2/conversation"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llmcontext"
 	"github.com/mattermost/mattermost-plugin-agents/v2/mcp"
@@ -101,7 +100,6 @@ func setupChannelAnalysisAPI(t *testing.T, dynamicLoading bool) (*TestEnvironmen
 	promptsObj, err := llm.NewPrompts(prompts.PromptsFolder)
 	require.NoError(t, err)
 
-	e.api.licenseChecker = enterprise.NewLicenseChecker(e.client)
 	e.OverrideLicense(&model.License{SkuShortName: "advanced"})
 	siteName := "Mattermost"
 	siteURL := "https://example.com"

@@ -4,14 +4,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import {PlusIcon} from '@mattermost/compass-icons/components';
-import {FormattedMessage, useIntl} from 'react-intl';
+import {FormattedMessage} from 'react-intl';
 
 import {TertiaryButton} from '../assets/buttons';
 
-import {useIsMultiLLMLicensed} from '@/license';
-
 import Bot, {ChannelAccessLevel, LLMBotConfig, UserAccessLevel} from './bot';
-import EnterpriseChip from './enterprise_chip';
 import {LLMService} from './service';
 
 const defaultNewBot: LLMBotConfig = {
@@ -49,10 +46,6 @@ type Props = {
 }
 
 const Bots = (props: Props) => {
-    const multiLLMLicensed = useIsMultiLLMLicensed();
-    const licenceAddDisabled = !multiLLMLicensed && props.bots.length > 0;
-    const intl = useIntl();
-
     const addNewBot = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
         const id = crypto.randomUUID();
@@ -91,31 +84,13 @@ const Bots = (props: Props) => {
                     />
                 ))}
             </BotsList>
-            <EnterpriseChipContainer>
-                <TertiaryButton
-                    onClick={addNewBot}
-                    disabled={licenceAddDisabled}
-                >
-                    <PlusAIServiceIcon/>
-                    <FormattedMessage defaultMessage='Add an AI Bot'/>
-                </TertiaryButton>
-                {licenceAddDisabled && (
-                    <EnterpriseChip
-                        text={intl.formatMessage({defaultMessage: 'Use multiple AI bots on qualifying Mattermost plans'})}
-                        subtext={intl.formatMessage({defaultMessage: 'Multiple AI services require a qualifying Mattermost plan'})}
-                    />
-                )}
-            </EnterpriseChipContainer>
+            <TertiaryButton onClick={addNewBot}>
+                <PlusAIServiceIcon/>
+                <FormattedMessage defaultMessage='Add an AI Bot'/>
+            </TertiaryButton>
         </>
     );
 };
-
-const EnterpriseChipContainer = styled.div`
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	gap: 8px;
-`;
 
 const PlusAIServiceIcon = styled(PlusIcon)`
 	width: 18px;

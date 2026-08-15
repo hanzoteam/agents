@@ -16,7 +16,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-agents/v2/assets"
 	"github.com/mattermost/mattermost-plugin-agents/v2/bifrost"
 	"github.com/mattermost/mattermost-plugin-agents/v2/config"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
 	"github.com/mattermost/mattermost-plugin-agents/v2/loadtest"
 	"github.com/mattermost/mattermost-plugin-agents/v2/mmapi"
@@ -51,7 +50,6 @@ type Transcriber interface {
 type MMBots struct {
 	ensureBotsClusterMutex cluster.MutexPluginAPI
 	pluginAPI              *pluginapi.Client
-	licenseChecker         *enterprise.LicenseChecker
 	config                 Config
 	agentStore             AgentStore
 	llmUpstreamHTTPClient  *http.Client
@@ -74,7 +72,7 @@ type MMBots struct {
 	forceRefresh bool
 }
 
-func New(mutexPluginAPI cluster.MutexPluginAPI, pluginAPI *pluginapi.Client, licenseChecker *enterprise.LicenseChecker, config Config, agentStore AgentStore, llmUpstreamHTTPClient *http.Client, metrics llm.MetricsObserver) *MMBots {
+func New(mutexPluginAPI cluster.MutexPluginAPI, pluginAPI *pluginapi.Client, config Config, agentStore AgentStore, llmUpstreamHTTPClient *http.Client, metrics llm.MetricsObserver) *MMBots {
 	var pluginTokenLogger llm.TokenUsagePluginLogger
 	if pluginAPI != nil {
 		pluginTokenLogger = &pluginAPI.Log
@@ -83,7 +81,6 @@ func New(mutexPluginAPI cluster.MutexPluginAPI, pluginAPI *pluginapi.Client, lic
 	return &MMBots{
 		ensureBotsClusterMutex: mutexPluginAPI,
 		pluginAPI:              pluginAPI,
-		licenseChecker:         licenseChecker,
 		config:                 config,
 		agentStore:             agentStore,
 		llmUpstreamHTTPClient:  llmUpstreamHTTPClient,
@@ -93,20 +90,15 @@ func New(mutexPluginAPI cluster.MutexPluginAPI, pluginAPI *pluginapi.Client, lic
 }
 
 // snapshotBotsAndServices returns the full bot lineup (file-config bots plus
-// DB-backed agents, license cap applied) and the services they reference.
+// DB-backed agents) and the services they reference.
 // EnsureBots calls this for both the optimistic equality check and the
 // rebuild, so the check can't miss a service used only by a DB agent.
 func (b *MMBots) snapshotBotsAndServices() ([]llm.BotConfig, map[string]struct{}, map[string]llm.ServiceConfig, error) {
 	// config.GetBots() returns the config-owned slice; clone before
-	// truncating + appending so we don't overwrite it.
+	// appending so we don't overwrite it.
 	botCfgs := slices.Clone(b.config.GetBots())
-	if len(botCfgs) > 1 && !b.licenseChecker.IsMultiLLMLicensed() {
-		b.pluginAPI.Log.Error("Only one bot allowed with current license.")
-		botCfgs = botCfgs[:1]
-	}
 
-	// DB-backed user agents bypass the license multi-LLM cap — gated by
-	// PermissionManageOwnAgent at the API layer instead.
+	// DB-backed user agents are gated by PermissionManageOwnAgent at the API layer.
 	activeDBBotUsernames := make(map[string]struct{})
 	if b.agentStore != nil {
 		dbAgents, err := b.agentStore.ListAgents()

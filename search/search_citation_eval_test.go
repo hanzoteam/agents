@@ -101,7 +101,6 @@ func TestSearchCitationFormat(t *testing.T) {
 				t.Prompts,
 				nil,
 				nil,
-				nil,
 			)
 
 			// Create a bot wrapping the eval's real LLM

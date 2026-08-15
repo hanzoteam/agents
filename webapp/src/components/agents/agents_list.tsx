@@ -6,8 +6,6 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector} from 'react-redux';
 import {PlusIcon, MagnifyIcon} from '@mattermost/compass-icons/components';
-//eslint-disable-next-line import/no-unresolved -- react-bootstrap is external
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {GlobalState} from '@mattermost/types/store';
 
@@ -15,16 +13,12 @@ import {getAgents, getServices, deleteAgent as deleteAgentAPI} from '@/client';
 import {userHasSystemPermission} from '@/utils/permissions';
 import {PrimaryButton} from '@/components/assets/buttons';
 import {UserAgent, ServiceInfo} from '@/types/agents';
-import {useIsMultiLLMLicensed} from '@/license';
 
 import AgentRow from './agent_row';
 import DeleteAgentDialog from './delete_agent_dialog';
 import AgentConfigView from './agent_config_view';
 
 type Tab = 'all' | 'yours';
-
-// Keep in sync with api.FreeTierAgentLimit (api/api_agents.go).
-const FREE_TIER_AGENT_LIMIT = 1;
 
 const AgentsList = () => {
     const intl = useIntl();
@@ -40,7 +34,6 @@ const AgentsList = () => {
     // Mirrors api.canConfigureAgentServices. Users without these permissions
     // browse read-only; requesting /services would 403 and wrongly flag every agent.
     const canViewServices = hasManageOwnAgent || hasManageOthersAgent || hasManageSystem;
-    const multiLLMLicensed = useIsMultiLLMLicensed();
 
     const [agents, setAgents] = useState<UserAgent[]>([]);
     const [services, setServices] = useState<ServiceInfo[]>([]);
@@ -55,11 +48,6 @@ const AgentsList = () => {
     const [viewOpen, setViewOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'create' | 'edit'>('create');
     const [editingAgent, setEditingAgent] = useState<UserAgent | null>(null);
-    const [activeAgentCount, setActiveAgentCount] = useState<number | null>(null);
-
-    const serverAgentCount = activeAgentCount ?? agents.length;
-    const createQuotaReached = !multiLLMLicensed && serverAgentCount >= FREE_TIER_AGENT_LIMIT;
-    const createButtonDisabled = loading || createQuotaReached;
 
     const fetchAgents = useCallback(async () => {
         try {
@@ -68,7 +56,6 @@ const AgentsList = () => {
             setServicesError(null);
             const agentResult = await getAgents();
             setAgents(agentResult.agents || []);
-            setActiveAgentCount(agentResult.activeAgentCount ?? null);
             if (canViewServices) {
                 try {
                     const serviceResult = await getServices();
@@ -124,13 +111,13 @@ const AgentsList = () => {
     }, []);
 
     const handleCreateAgent = useCallback(() => {
-        if (createButtonDisabled) {
+        if (loading) {
             return;
         }
         setEditingAgent(null);
         setViewMode('create');
         setViewOpen(true);
-    }, [createButtonDisabled]);
+    }, [loading]);
 
     const handleViewBack = useCallback(() => {
         setViewOpen(false);
@@ -195,35 +182,13 @@ const AgentsList = () => {
                             </Subtitle>
                         </TitleRow>
                         {userCanCreateAgent && (
-                            createQuotaReached ? (
-                                <OverlayTrigger
-                                    placement='bottom'
-                                    overlay={
-                                        <Tooltip id='create-agent-quota-tooltip'>
-                                            <FormattedMessage defaultMessage='Multiple self-service agents require a qualifying Mattermost plan'/>
-                                        </Tooltip>
-                                    }
-                                >
-                                    {/* Wrapper receives hover events; a disabled button does not fire them itself. */}
-                                    <CreateButtonWrapper>
-                                        <CreateButton
-                                            onClick={handleCreateAgent}
-                                            disabled={true}
-                                        >
-                                            <PlusIcon size={16}/>
-                                            <FormattedMessage defaultMessage='Create agent'/>
-                                        </CreateButton>
-                                    </CreateButtonWrapper>
-                                </OverlayTrigger>
-                            ) : (
-                                <CreateButton
-                                    onClick={handleCreateAgent}
-                                    disabled={createButtonDisabled}
-                                >
-                                    <PlusIcon size={16}/>
-                                    <FormattedMessage defaultMessage='Create agent'/>
-                                </CreateButton>
-                            )
+                            <CreateButton
+                                onClick={handleCreateAgent}
+                                disabled={loading}
+                            >
+                                <PlusIcon size={16}/>
+                                <FormattedMessage defaultMessage='Create agent'/>
+                            </CreateButton>
                         )}
                     </Header>
 
@@ -450,11 +415,6 @@ const Subtitle = styled.p`
     line-height: 20px;
     color: rgba(var(--center-channel-color-rgb), 0.75);
     margin: 0;
-`;
-
-const CreateButtonWrapper = styled.div`
-    display: inline-flex;
-    flex-shrink: 0;
 `;
 
 const CreateButton = styled(PrimaryButton)`

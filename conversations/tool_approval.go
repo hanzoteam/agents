@@ -58,14 +58,6 @@ var ErrInvalidToolAnswer = errors.New("invalid answer for user interaction tool 
 // persisted before a license change; the primary enforcement is at supply
 // time, where llmcontext.Builder drops remote MCP tools from the LLM context
 // entirely on unlicensed servers.
-var ErrRemoteMCPNotLicensed = errors.New("tools from remote MCP servers require a license with MCP support")
-
-// isRemoteMCPLicensed reports whether the server license covers remote MCP
-// servers. A nil license checker fails closed.
-func (c *Conversations) isRemoteMCPLicensed() bool {
-	return c.licenseChecker != nil && c.licenseChecker.IsBasicsLicensed()
-}
-
 // HandleToolCall handles user approval/rejection of pending tool calls via conversation entities.
 // It looks up pending tool_use blocks in the conversation turns, executes approved tools,
 // writes results back as turns, and streams a follow-up LLM response.
@@ -133,9 +125,6 @@ func (c *Conversations) HandleToolCall(ctx context.Context, userID string, post 
 		}
 		if b.Status != conversation.StatusPending && b.Status != conversation.StatusAccepted {
 			continue
-		}
-		if slices.Contains(acceptedToolIDs, b.ID) && !c.isRemoteMCPLicensed() {
-			return ErrRemoteMCPNotLicensed
 		}
 	}
 
@@ -418,7 +407,6 @@ func (c *Conversations) HandleToolResult(ctx context.Context, userID string, pos
 	// actually executed to decide whether a follow-up stream is warranted.
 	clickedPostToolUseIDs := make(map[string]struct{})
 	clickedPostHasExecutedTool := false
-	acceptedRemoteMCPTool := false
 	for _, turn := range turns {
 		if turn.Role != "assistant" || turn.PostID == nil || *turn.PostID != post.Id {
 			continue
@@ -436,9 +424,6 @@ func (c *Conversations) HandleToolResult(ctx context.Context, userID string, pos
 				b.Status == conversation.StatusError ||
 				b.Status == conversation.StatusAutoApproved {
 				clickedPostHasExecutedTool = true
-			}
-			if acceptedSet[b.ID] && mcp.IsRemoteServerOrigin(b.ServerOrigin) {
-				acceptedRemoteMCPTool = true
 			}
 		}
 	}
@@ -475,9 +460,6 @@ func (c *Conversations) HandleToolResult(ctx context.Context, userID string, pos
 	// Sharing output from remote/external MCP tools is part of the licensed
 	// "MCP Support" feature (see HandleToolCall). Keep-private decisions are
 	// always allowed — they disclose nothing.
-	if acceptedRemoteMCPTool && !c.isRemoteMCPLicensed() {
-		return ErrRemoteMCPNotLicensed
-	}
 
 	now := model.GetMillis()
 	for _, turn := range turns {

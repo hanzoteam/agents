@@ -107,11 +107,6 @@ func (a *API) handleThreadAnalysis(c *gin.Context) {
 	channel := c.MustGet(ContextChannelKey).(*model.Channel)
 	bot := c.MustGet(ContextBotKey).(*bots.Bot)
 
-	if !a.licenseChecker.IsBasicsLicensed() {
-		c.AbortWithError(http.StatusForbidden, errors.New("feature not licensed"))
-		return
-	}
-
 	var data struct {
 		AnalysisType string `json:"analysis_type" binding:"required"`
 	}
@@ -338,16 +333,15 @@ func (a *API) handleToolCall(c *gin.Context) {
 
 // toolApprovalHTTPStatus maps errors from HandleToolCall/HandleToolResult to
 // HTTP statuses. Stale-click and missing-conversation cases are client-side
-// issues (400); requester-mismatch and unlicensed remote MCP use are
-// permission denials (403); everything else falls through to 500.
+// issues (400); a requester mismatch is a permission denial (403); everything
+// else falls through to 500.
 func toolApprovalHTTPStatus(err error) int {
 	switch {
 	case errors.Is(err, conversations.ErrStaleToolClick),
 		errors.Is(err, conversations.ErrPostMissingConversationID),
 		errors.Is(err, conversations.ErrInvalidToolAnswer):
 		return http.StatusBadRequest
-	case errors.Is(err, conversations.ErrNotRequester),
-		errors.Is(err, conversations.ErrRemoteMCPNotLicensed):
+	case errors.Is(err, conversations.ErrNotRequester):
 		return http.StatusForbidden
 	default:
 		return http.StatusInternalServerError

@@ -11,7 +11,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-agents/v2/bots"
 	"github.com/mattermost/mattermost-plugin-agents/v2/conversation"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
 	"github.com/mattermost/mattermost-plugin-agents/v2/mcp"
 	"github.com/mattermost/mattermost-plugin-agents/v2/mmapi/mocks"
@@ -128,8 +127,7 @@ func TestHandleToolCallAnswersUserQuestion(t *testing.T) {
 
 			mockAPI := &plugintest.API{}
 			pluginAPI := pluginapi.NewClient(mockAPI, nil)
-			licenseChecker := enterprise.NewLicenseChecker(pluginAPI)
-			botsService := bots.New(mockAPI, pluginAPI, licenseChecker, nil, nil, &http.Client{}, nil)
+			botsService := bots.New(mockAPI, pluginAPI, nil, nil, &http.Client{}, nil)
 			lm := &loadedStateLLM{}
 			bot := loadedStateBot(lm)
 			botsService.SetBotsForTesting([]*bots.Bot{bot})
@@ -252,8 +250,7 @@ func TestHandleToolCallMixedBatchInChannelAwaitsShareDecision(t *testing.T) {
 
 	mockAPI := &plugintest.API{}
 	pluginAPI := pluginapi.NewClient(mockAPI, nil)
-	licenseChecker := enterprise.NewLicenseChecker(pluginAPI)
-	botsService := bots.New(mockAPI, pluginAPI, licenseChecker, nil, nil, &http.Client{}, nil)
+	botsService := bots.New(mockAPI, pluginAPI, nil, nil, &http.Client{}, nil)
 	lm := &loadedStateLLM{}
 	bot := loadedStateBot(lm)
 	botsService.SetBotsForTesting([]*bots.Bot{bot})
@@ -404,7 +401,6 @@ func TestHandleToolCallAutoExecutesPolicyEligiblePendingTools(t *testing.T) {
 		name             string
 		wouldAutoExecute bool
 		includeQuestion  bool
-		unlicensed       bool
 		policyChecker    mapPolicyChecker
 		wantToolStatus   string
 		wantToolResult   string
@@ -427,22 +423,6 @@ func TestHandleToolCallAutoExecutesPolicyEligiblePendingTools(t *testing.T) {
 			wouldAutoExecute: true,
 			policyChecker: mapPolicyChecker{
 				origin: {"get_issue": {policy: mcp.ToolPolicyAutoRunEverywhere, enabled: false}},
-			},
-			wantToolStatus: conversation.StatusRejected,
-			wantToolResult: "Tool call rejected by user",
-			wantToolShared: false,
-			wantFollowUp:   false, // nothing executed, so nothing to follow up on
-		},
-		{
-			// Remote MCP tools are license-gated at supply time: an
-			// unlicensed context builder drops them from the tool store, so
-			// a marked remote tool must resolve to rejection on resume — not
-			// execute and not fail the whole submission.
-			name:             "unlicensed remote auto-run resume rejects instead of executing",
-			wouldAutoExecute: true,
-			unlicensed:       true,
-			policyChecker: mapPolicyChecker{
-				origin: {"get_issue": {policy: mcp.ToolPolicyAutoRunEverywhere, enabled: true}},
 			},
 			wantToolStatus: conversation.StatusRejected,
 			wantToolResult: "Tool call rejected by user",
@@ -529,10 +509,8 @@ func TestHandleToolCallAutoExecutesPolicyEligiblePendingTools(t *testing.T) {
 			}))
 
 			mockAPI := &plugintest.API{}
-			mockLicenseState(mockAPI, !tc.unlicensed)
 			pluginAPI := pluginapi.NewClient(mockAPI, nil)
-			licenseChecker := enterprise.NewLicenseChecker(pluginAPI)
-			botsService := bots.New(mockAPI, pluginAPI, licenseChecker, nil, nil, &http.Client{}, nil)
+			botsService := bots.New(mockAPI, pluginAPI, nil, nil, &http.Client{}, nil)
 			lm := &loadedStateLLM{}
 			bot := loadedStateBot(lm)
 			botsService.SetBotsForTesting([]*bots.Bot{bot})
@@ -543,9 +521,6 @@ func TestHandleToolCallAutoExecutesPolicyEligiblePendingTools(t *testing.T) {
 			mmClient.On("GetConfig").Maybe().Return(&model.Config{})
 
 			contextBuilder := loadedStateBuilder(t)
-			if tc.unlicensed {
-				contextBuilder = newChannelFollowUpTestBuilderWithLicense(t, []llm.Tool{loadedStateTool()}, &channelFollowUpTestConfig{}, false)
-			}
 
 			streamingService := &loadedStateStreamingService{}
 			c := &Conversations{
@@ -554,7 +529,6 @@ func TestHandleToolCallAutoExecutesPolicyEligiblePendingTools(t *testing.T) {
 				bots:              botsService,
 				convService:       conversation.NewService(convStore, nil, nil, nil),
 				streamingService:  streamingService,
-				licenseChecker:    licenseChecker,
 				toolPolicyChecker: tc.policyChecker,
 			}
 

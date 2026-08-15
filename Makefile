@@ -654,7 +654,7 @@ e2e: e2e/node_modules
 	@MM_DEBUG= $(MAKE) dist
 	cd e2e && npx playwright test
 
-## Check and fix copyright/license headers in all files (enterprise directory is excluded)
+## Check and fix copyright/license headers in all files
 .PHONY: copyright
 copyright: install-go-tools webapp/node_modules
 	@echo Checking license headers...

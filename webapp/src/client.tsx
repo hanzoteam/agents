@@ -898,7 +898,6 @@ export async function savePluginConfig(config: PluginConfig): Promise<void> {
 
 export type AgentsListResult = {
     agents: UserAgent[];
-    activeAgentCount?: number;
 };
 
 export async function getAgents(): Promise<AgentsListResult> {
@@ -908,15 +907,7 @@ export async function getAgents(): Promise<AgentsListResult> {
     }));
 
     if (response.ok) {
-        const agents = await response.json() as UserAgent[];
-        const activeCountHeader = response.headers.get('X-Agent-Active-Count');
-        const result: AgentsListResult = {agents};
-
-        // Only trust a strict non-negative integer (rejects e.g. "1foo", "", null).
-        if (activeCountHeader !== null && (/^\d+$/).test(activeCountHeader)) {
-            result.activeAgentCount = Number.parseInt(activeCountHeader, 10);
-        }
-        return result;
+        return {agents: await response.json() as UserAgent[]};
     }
 
     throw new ClientError(Client4.url, {

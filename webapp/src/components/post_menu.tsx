@@ -12,8 +12,6 @@ import {doReaction, doThreadAnalysis} from '../client';
 
 import {useSelectPost} from '@/hooks';
 
-import {useIsBasicsLicensed} from '@/license';
-
 import {useBotlistForChannel} from '@/bots';
 
 import IconAI from './assets/icon_ai';
@@ -35,16 +33,11 @@ const PostMenu = (props: Props) => {
     const intl = useIntl();
     const {bots, activeBot, setActiveBot} = useBotlistForChannel(props.post.channel_id);
     const post = props.post;
-    const isBasicsLicensed = useIsBasicsLicensed();
 
     const analyzeThread = async (postId: string, analysisType: string) => {
         const result = await doThreadAnalysis(postId, analysisType, activeBot?.username || '');
         selectPost(result.postid, result.channelid);
     };
-
-    if (!isBasicsLicensed) {
-        return null;
-    }
 
     if (bots && bots.length === 0) {
         // No bots available (either unconfigured or filtered by permissions)

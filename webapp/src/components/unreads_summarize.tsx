@@ -8,7 +8,6 @@ import {FormattedMessage} from 'react-intl';
 import {useSelectPost} from '@/hooks';
 
 import {getChannelInterval} from '@/client';
-import {useIsBasicsLicensed} from '@/license';
 
 import {useBotlistForChannel} from '@/bots';
 
@@ -83,7 +82,6 @@ interface Props {
 
 const UnreadsSumarize = (props: Props) => {
     const selectPost = useSelectPost();
-    const isBasicsLicensed = useIsBasicsLicensed();
     const {bots, activeBot, setActiveBot} = useBotlistForChannel(props.channelId);
 
     const summarizeNew = async () => {
@@ -100,10 +98,6 @@ const UnreadsSumarize = (props: Props) => {
         const result = await getChannelInterval(props.channelId, props.lastViewedAt, 0, 'open_questions', '', activeBot?.username || '');
         selectPost(result.postid, result.channelid);
     };
-
-    if (!isBasicsLicensed) {
-        return null;
-    }
 
     if (bots && bots.length === 0) {
         // No bots available (either unconfigured or filtered by permissions)

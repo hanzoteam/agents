@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
@@ -25,8 +24,7 @@ func SetupTestEnvironment(t *testing.T) *TestEnvironment {
 	mockAPI := &plugintest.API{}
 	client := pluginapi.NewClient(mockAPI, nil)
 
-	licenseChecker := enterprise.NewLicenseChecker(client)
-	mmBots := New(mockAPI, client, licenseChecker, nil, nil, &http.Client{}, nil)
+	mmBots := New(mockAPI, client, nil, nil, &http.Client{}, nil)
 
 	e := &TestEnvironment{
 		bots:    mmBots,

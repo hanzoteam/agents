@@ -19,7 +19,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-agents/v2/conversations"
 	"github.com/mattermost/mattermost-plugin-agents/v2/customprompts"
 	"github.com/mattermost/mattermost-plugin-agents/v2/embeddings"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/files"
 	"github.com/mattermost/mattermost-plugin-agents/v2/i18n"
 	"github.com/mattermost/mattermost-plugin-agents/v2/indexer"
@@ -103,7 +102,6 @@ func (p *Plugin) OnActivate() error {
 	pluginAPI := pluginapi.NewClient(p.API, p.Driver)
 	p.pluginAPI = pluginAPI
 	mmClient := mmapi.NewClient(pluginAPI)
-	licenseChecker := enterprise.NewLicenseChecker(pluginAPI)
 	dbClient := mmapi.NewDBClient(pluginAPI)
 
 	// Initialize store and run database migrations
@@ -199,7 +197,7 @@ func (p *Plugin) OnActivate() error {
 	}
 	p.configMigrated = true
 
-	bots := bots.New(p.API, pluginAPI, licenseChecker, &p.configuration, p.store, llmUpstreamHTTPClient, metricsService)
+	bots := bots.New(p.API, pluginAPI, &p.configuration, p.store, llmUpstreamHTTPClient, metricsService)
 
 	// migrateAndRefresh runs the one-time legacy bot migration, then forces
 	// a bot refresh only if the migration actually created new agents.
@@ -266,7 +264,6 @@ func (p *Plugin) OnActivate() error {
 		dbClient.DB,
 		llmUpstreamHTTPClient,
 		p.configuration.EmbeddingSearchConfig(),
-		licenseChecker,
 		indexer.DeferredIndexRebuildActive(mmClient),
 	)
 	if err != nil {
@@ -312,7 +309,6 @@ func (p *Plugin) OnActivate() error {
 		mmClient,
 		prompts,
 		streamingService,
-		licenseChecker,
 		nil, // conversation service wired in a later step
 	)
 
@@ -322,7 +318,6 @@ func (p *Plugin) OnActivate() error {
 			dbClient.DB,
 			llmUpstreamHTTPClient,
 			p.configuration.EmbeddingSearchConfig(),
-			licenseChecker,
 			indexer.DeferredIndexRebuildActive(mmClient),
 		)
 		if initErr != nil {
@@ -402,7 +397,6 @@ func (p *Plugin) OnActivate() error {
 		contextBuilder,
 		bots,
 		dbClient,
-		licenseChecker,
 		i18nBundle,
 		nil, // meetingsService will be set after it's created
 		&p.configuration,
@@ -463,7 +457,6 @@ func (p *Plugin) OnActivate() error {
 		prompts,
 		mmClient,
 		dbClient,
-		licenseChecker,
 		streamingService,
 		i18nBundle,
 		mcpClientManager,

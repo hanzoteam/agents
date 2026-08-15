@@ -13,7 +13,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-agents/v2/bots"
 	"github.com/mattermost/mattermost-plugin-agents/v2/conversation"
 	"github.com/mattermost/mattermost-plugin-agents/v2/embeddings"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/indexer"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
 	"github.com/mattermost/mattermost-plugin-agents/v2/mmapi"
@@ -71,7 +70,6 @@ type Search struct {
 	mmclient            mmapi.Client
 	prompts             *llm.Prompts
 	streamingService    streaming.Service
-	licenseChecker      *enterprise.LicenseChecker
 	conversationService *conversation.Service
 }
 
@@ -80,7 +78,6 @@ func New(
 	mmclient mmapi.Client,
 	prompts *llm.Prompts,
 	streamingService streaming.Service,
-	licenseChecker *enterprise.LicenseChecker,
 	conversationService *conversation.Service,
 ) *Search {
 	return &Search{
@@ -88,7 +85,6 @@ func New(
 		mmclient:            mmclient,
 		prompts:             prompts,
 		streamingService:    streamingService,
-		licenseChecker:      licenseChecker,
 		conversationService: conversationService,
 	}
 }

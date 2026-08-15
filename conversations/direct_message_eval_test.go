@@ -13,7 +13,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-agents/v2/bots"
 	"github.com/mattermost/mattermost-plugin-agents/v2/conversations"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/evals"
 	"github.com/mattermost/mattermost-plugin-agents/v2/i18n"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
@@ -85,8 +84,7 @@ func TestDirectMessageConversations(t *testing.T) {
 			mockAPI := &plugintest.API{}
 			client := pluginapi.NewClient(mockAPI, nil)
 			mmClient := mocks.NewMockClient(t)
-			licenseChecker := enterprise.NewLicenseChecker(client)
-			botService := bots.New(mockAPI, client, licenseChecker, nil, nil, &http.Client{}, nil)
+			botService := bots.New(mockAPI, client, nil, nil, &http.Client{}, nil)
 			prompts, err := llm.NewPrompts(prompts.PromptsFolder)
 			require.NoError(t, err, "Failed to load prompts")
 
@@ -127,7 +125,6 @@ func TestDirectMessageConversations(t *testing.T) {
 				contextBuilder,
 				botService,
 				nil,
-				licenseChecker,
 				i18n.Init(),
 				nil,
 				nil, // configProvider - nil means channel tool calling is disabled (default)

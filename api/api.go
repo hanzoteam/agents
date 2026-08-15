@@ -22,7 +22,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-agents/v2/conversations"
 	"github.com/mattermost/mattermost-plugin-agents/v2/customprompts"
 	"github.com/mattermost/mattermost-plugin-agents/v2/embeddings"
-	"github.com/mattermost/mattermost-plugin-agents/v2/enterprise"
 	"github.com/mattermost/mattermost-plugin-agents/v2/files"
 	"github.com/mattermost/mattermost-plugin-agents/v2/i18n"
 	"github.com/mattermost/mattermost-plugin-agents/v2/indexer"
@@ -146,7 +145,6 @@ type API struct {
 	config                Config
 	mmClient              mmapi.Client
 	dbClient              *mmapi.DBClient
-	licenseChecker        *enterprise.LicenseChecker
 	streamingService      streaming.Service
 	i18nBundle            *i18n.Bundle
 	mcpClientManager      MCPClientManager
@@ -189,7 +187,6 @@ func New(
 	prompts *llm.Prompts,
 	mmClient mmapi.Client,
 	dbClient *mmapi.DBClient,
-	licenseChecker *enterprise.LicenseChecker,
 	streamingService streaming.Service,
 	i18nBundle *i18n.Bundle,
 	mcpClientManager MCPClientManager,
@@ -221,7 +218,6 @@ func New(
 		config:                config,
 		mmClient:              mmClient,
 		dbClient:              dbClient,
-		licenseChecker:        licenseChecker,
 		streamingService:      streamingService,
 		i18nBundle:            i18nBundle,
 		mcpClientManager:      mcpClientManager,
@@ -361,8 +357,8 @@ func (a *API) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Reques
 
 	channelRouter := botRequiredRouter.Group("/channel/:channelid")
 	channelRouter.Use(a.channelAuthorizationRequired)
-	channelRouter.POST("/analyze", a.channelAnalysisLicenseRequired, a.handleChannelAnalysis)
-	channelRouter.POST("/interval", a.channelAnalysisLicenseRequired, a.handleInterval)
+	channelRouter.POST("/analyze", a.handleChannelAnalysis)
+	channelRouter.POST("/interval", a.handleInterval)
 
 	adminRouter := router.Group("/admin")
 	adminRouter.Use(a.mattermostAdminAuthorizationRequired)
