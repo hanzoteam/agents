@@ -5,13 +5,15 @@
 # app.hanzo.team can copy it into the workspace's file store from an init
 # container. The server installs it from there on boot.
 #
-# `version` repeats plugin.json's. The plugin's version is its own identity and
-# has to be in the manifest the server reads; the image tag has to be in a file
-# imgver knows how to read. They move together — change one, change the other.
+# The image has its own version line (VERSION), separate from the plugin's
+# (plugin.json). They are different things: the plugin's version is what the
+# server reports for the plugin and tracks what it forks — 2.5.2-hanzo.1, which
+# sits between upstream 2.5.1 and 2.5.2. The image's version tracks this
+# delivery vehicle, which changes for reasons the plugin does not, and imgver
+# takes plain X.Y.Z only.
 #
 # No deploy: here. cd.hanzo.ai runs with selfHeal, so a tag written anywhere but
 # the universe pin is restored away on the next poll.
-version: 2.5.2-hanzo.1
 
 images:
   - name: agents
