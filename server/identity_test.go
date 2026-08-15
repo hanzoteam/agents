@@ -44,15 +44,10 @@ func TestNewIdentity(t *testing.T) {
 		require.Nil(t, newIdentity(http.DefaultClient, env(map[string]string{iamSecretEnv: "secret"})))
 	})
 
-	t.Run("the token endpoint defaults and can be overridden", func(t *testing.T) {
+	t.Run("the token endpoint is fixed", func(t *testing.T) {
 		i := newIdentity(http.DefaultClient, env(map[string]string{iamIDEnv: "id", iamSecretEnv: "s"}))
 		require.NotNil(t, i)
-		require.Equal(t, defaultIAMTokenURL, i.tokenURL)
-
-		i = newIdentity(http.DefaultClient, env(map[string]string{
-			iamIDEnv: "id", iamSecretEnv: "s", iamTokenEnv: "https://iam.test/token",
-		}))
-		require.Equal(t, "https://iam.test/token", i.tokenURL)
+		require.Equal(t, iamTokenURL, i.tokenURL)
 	})
 }
 

@@ -29,9 +29,11 @@ import (
 const (
 	iamIDEnv     = "MM_HANZOSETTINGS_ID"
 	iamSecretEnv = "MM_HANZOSETTINGS_SECRET" // #nosec G101 -- the name of a variable, not a credential
-	iamTokenEnv  = "MM_HANZOSETTINGS_TOKENURL"
 
-	defaultIAMTokenURL = "https://hanzo.id/v1/iam/oauth/token"
+	// Where Hanzo IAM issues tokens. Fixed, not configurable: it is one address
+	// for the whole fleet, and a setting for it is a setting that can disagree
+	// with the credentials sitting next to it.
+	iamTokenURL = "https://hanzo.id/v1/iam/oauth/token"
 
 	// Tokens are minted well before they lapse, because the cost of an early
 	// mint is one request and the cost of a late one is every agent in the
@@ -61,12 +63,7 @@ func newIdentity(client *http.Client, env func(string) string) *identity {
 		return nil
 	}
 
-	tokenURL := env(iamTokenEnv)
-	if tokenURL == "" {
-		tokenURL = defaultIAMTokenURL
-	}
-
-	return &identity{client: client, tokenURL: tokenURL, id: id, secret: secret}
+	return &identity{client: client, tokenURL: iamTokenURL, id: id, secret: secret}
 }
 
 // Token returns a valid access token, minting a new one when the cached token
