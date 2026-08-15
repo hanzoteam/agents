@@ -1,0 +1,8 @@
+# The build regenerates everything derived. Copying a local tree's output in
+# would let a developer's machine decide what ships.
+.git
+**/node_modules
+**/dist
+webapp/src/manifest.ts
+server/manifest.go
+e2e

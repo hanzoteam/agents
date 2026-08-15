@@ -1,0 +1,29 @@
+# Canonical CI/CD config for hanzoteam/agents — read by the hanzoai/ci reusable
+# workflow (.hanzo/workflows/cicd.yml) and by platform.hanzo.ai.
+#
+# One image, and it runs nothing: it carries the built plugin bundle so
+# app.hanzo.team can copy it into the workspace's file store from an init
+# container. The server installs it from there on boot.
+#
+# `version` repeats plugin.json's. The plugin's version is its own identity and
+# has to be in the manifest the server reads; the image tag has to be in a file
+# imgver knows how to read. They move together — change one, change the other.
+#
+# No deploy: here. cd.hanzo.ai runs with selfHeal, so a tag written anywhere but
+# the universe pin is restored away on the next poll.
+version: 2.5.2-hanzo.1
+
+images:
+  - name: agents
+    context: .
+    dockerfile: Dockerfile
+    repo: ghcr.io/hanzoteam/agents
+
+# The image build compiles both halves, so a broken tree already fails it. This
+# covers what compiling cannot: that a configured roster is created whole. The
+# upstream this forks truncated a sixteen-bot config to its first entry when the
+# server was unlicensed, which is the defect that made the fork necessary, and
+# it is the kind that comes back quietly.
+test:
+  - name: bots
+    run: go test ./bots/... ./api/...
