@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"sync/atomic"
 
 	"github.com/mattermost/mattermost-plugin-agents/v2/embeddings"
@@ -199,40 +198,6 @@ func (c *Container) GetServiceByID(id string) (llm.ServiceConfig, bool) {
 	return cfg.GetServiceByID(id)
 }
 
-// serviceKeyEnv names the variable a service takes its API key from when the
-// stored configuration leaves it empty: AGENTS_KEY_ followed by the service id.
-// Anything not a letter or digit becomes an underscore, because a service id is
-// free-form and a variable name is not.
-func serviceKeyEnv(id string) string {
-	var b strings.Builder
-	b.WriteString("AGENTS_KEY_")
-	for _, r := range strings.ToUpper(id) {
-		switch {
-		case r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
-			b.WriteRune(r)
-		default:
-			b.WriteRune('_')
-		}
-	}
-	return b.String()
-}
-
-// supplyServiceKeys fills in any API key the stored configuration leaves empty
-// from the environment, so a credential can arrive from KMS as an environment
-// variable and never be written down.
-//
-// It runs on the copy this process holds, not on what is stored. The admin API
-// reads the database directly, so it keeps returning the empty string it was
-// given, and an admin saving the settings page writes that empty string back
-// rather than persisting the key into the config table.
-func supplyServiceKeys(cfg *Config) {
-	for i := range cfg.Services {
-		if cfg.Services[i].APIKey == "" {
-			cfg.Services[i].APIKey = os.Getenv(serviceKeyEnv(cfg.Services[i].ID))
-		}
-	}
-}
-
 // Updates the current configuration
 // The new configuration is deep-copied to ensure the new and old
 // configurations are independent of each other.
@@ -246,8 +211,6 @@ func (c *Container) Update(newConfig *Config) {
 	if err != nil {
 		panic(fmt.Sprintf("failed to deep copy configuration: %v", err))
 	}
-
-	supplyServiceKeys(&clone)
 
 	// Update the atomic pointer with the new configuration
 	c.cfg.Store(&clone)
@@ -271,7 +234,6 @@ func (c *Container) StorePersistedConfigWithoutNotify(newConfig *Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to deep copy configuration: %w", err)
 	}
-	supplyServiceKeys(&clone)
 	c.cfg.Store(&clone)
 	return nil
 }

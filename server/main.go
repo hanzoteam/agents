@@ -64,6 +64,7 @@ type Plugin struct {
 	telemetryEndpoint    string
 	store                *store.Store
 	configMigrated       bool
+	identityCancel       context.CancelFunc
 }
 
 type pluginLogger struct {
@@ -222,6 +223,17 @@ func (p *Plugin) OnActivate() error {
 		}
 		migrateAndRefresh("config_update")
 	})
+
+	// Services pointed at Hanzo carry no key of their own: they are reached with
+	// this workspace's identity, minted from the credentials it already holds
+	// for signing users in. Before the agents are built, so they are built with
+	// it, and kept fresh for as long as the plugin runs.
+	if ident := newIdentity(llmUpstreamHTTPClient, os.Getenv); ident != nil {
+		if authErr := p.authenticate(context.Background(), ident, bots); authErr != nil {
+			pluginAPI.Log.Error("failed to authenticate to Hanzo", "error", authErr.Error())
+		}
+		p.identityCancel = p.startRenew(ident, bots)
+	}
 
 	if ensureBotsErr := bots.EnsureBots(); ensureBotsErr != nil {
 		// If we fail to ensure bots, we log the error but do not return
@@ -493,6 +505,11 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) OnDeactivate() error {
+	if p.identityCancel != nil {
+		p.identityCancel()
+		p.identityCancel = nil
+	}
+
 	// Flush pending telemetry spans
 	p.telemetryMu.Lock()
 	if p.telemetryShutdown != nil {
