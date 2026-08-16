@@ -354,7 +354,7 @@ func (b *MMBots) EnsureBots() error {
 	// For each bot in the configuration, try to find an existing bot matching the username.
 	// If it exists, update it to match. Otherwise, create a new bot.
 	for _, bot := range bots {
-		description := poweredByDescription(bot.service.Type, bot.service.DefaultModel)
+		description := poweredByDescription(bot.service.Name, bot.service.Type, bot.service.DefaultModel)
 		if prevBot, ok := prevousMMBotsByUsername[bot.cfg.Name]; ok {
 			var err error
 			bot.mmBot, err = b.pluginAPI.Bot.Patch(prevBot.UserId, &model.BotPatch{
@@ -678,13 +678,23 @@ func (b *MMBots) GetAllBotUserIDs() []string {
 	return ids
 }
 
-// poweredByDescription builds the Mattermost bot description shown in the UI.
-func poweredByDescription(serviceType, modelName string) string {
+// poweredByDescription builds the bot description shown in the UI.
+//
+// It names the SERVICE, not the wire protocol it speaks. A service configured as
+// "Hanzo AI" read as `openaicompatible` here, so the header over every agent
+// announced the transport — a word that means nothing to the person reading it
+// and names no product. The type is still the fallback, because a service added
+// without a name has nothing better to say.
+func poweredByDescription(serviceName, serviceType, modelName string) string {
+	label := serviceName
+	if label == "" {
+		label = serviceType
+	}
 	var description string
 	if modelName == "" {
-		description = "Powered by " + serviceType
+		description = "Powered by " + label
 	} else {
-		description = "Powered by " + serviceType + " - " + modelName
+		description = "Powered by " + label + " - " + modelName
 	}
 	if utf8.RuneCountInString(description) > model.BotDescriptionMaxRunes {
 		return string([]rune(description)[:model.BotDescriptionMaxRunes])

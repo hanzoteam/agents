@@ -746,7 +746,7 @@ func TestEnsureBots(t *testing.T) {
 							if model == "" {
 								model = svc.DefaultModel
 							}
-							assert.Equal(t, poweredByDescription(svc.Type, model), bot.Description)
+							assert.Equal(t, poweredByDescription(svc.Name, svc.Type, model), bot.Description)
 							return bot
 						}
 					}
@@ -1101,10 +1101,18 @@ func TestPoweredByDescription(t *testing.T) {
 
 	tests := []struct {
 		name        string
+		serviceName string
 		serviceType string
 		model       string
 		want        string
 	}{
+		{
+			name:        "the service's NAME is what the reader sees",
+			serviceName: "Hanzo AI",
+			serviceType: "openaicompatible",
+			model:       "enso",
+			want:        "Powered by Hanzo AI - enso",
+		},
 		{
 			name:        "service type and model",
 			serviceType: "openai",
@@ -1133,7 +1141,7 @@ func TestPoweredByDescription(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := poweredByDescription(tt.serviceType, tt.model)
+			got := poweredByDescription(tt.serviceName, tt.serviceType, tt.model)
 			assert.Equal(t, tt.want, got)
 			assert.LessOrEqual(t, utf8.RuneCountInString(got), model.BotDescriptionMaxRunes)
 		})
