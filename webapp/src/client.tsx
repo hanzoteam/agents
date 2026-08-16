@@ -416,7 +416,19 @@ export async function getAIBots() {
     }));
 
     if (response.ok) {
-        return response.json();
+        const bots = await response.json();
+
+        // Address the API where this server serves it. The bundled client is
+        // compiled against upstream's /api/v4 and this server serves
+        // model.APIURLSuffix, so every avatar, profile and channel call the
+        // client makes 404s -- which is a dead Agents panel with no error
+        // anywhere, since the plugin's own routes hang off the site URL and
+        // keep working. The server states the prefix so it has one home.
+        if (bots?.apiURLSuffix) {
+            Client4.urlVersion = bots.apiURLSuffix;
+        }
+
+        return bots;
     }
 
     throw new ClientError(Client4.url, {

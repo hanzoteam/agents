@@ -512,6 +512,18 @@ type AIBotsResponse struct {
 	Bots             []AIBotInfo `json:"bots"`
 	SearchEnabled    bool        `json:"searchEnabled"`
 	AllowUnsafeLinks bool        `json:"allowUnsafeLinks"`
+
+	// APIURLSuffix is where this server serves its API, so the webapp addresses
+	// the routes that exist instead of the ones its bundled client was compiled
+	// against. The client package ships upstream's /api/v4; this server serves
+	// model.APIURLSuffix. Everything the plugin itself serves is reached from
+	// the site URL and was unaffected, which is why the panel loaded while every
+	// avatar, profile and channel call through the client 404'd -- the symptom
+	// was a dead Agents panel with no error anywhere.
+	//
+	// Sent rather than spelled in the webapp so the prefix has ONE home: this
+	// constant, which the plugin already resolves from the server's own module.
+	APIURLSuffix string `json:"apiURLSuffix"`
 }
 
 // getAIBotsForUser returns all AI bots available to a user
@@ -576,6 +588,7 @@ func (a *API) handleGetAIBots(c *gin.Context) {
 		Bots:             bots,
 		SearchEnabled:    searchEnabled,
 		AllowUnsafeLinks: a.config.AllowUnsafeLinks(),
+		APIURLSuffix:     model.APIURLSuffix,
 	})
 }
 
