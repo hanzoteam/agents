@@ -75,6 +75,36 @@ export const useJobStatus = () => {
         return function noop() { /* No cleanup needed */ };
     }, [polling, fetchJobStatus]);
 
+    const handleHealthCheck = async () => {
+        setHealthCheckLoading(true);
+        setHealthCheckResult(null);
+
+        try {
+            const result = await checkIndexHealth();
+            if (result.status === 'not_configured') {
+                // Search not configured yet - don't show as error
+                setHealthCheckResult(null);
+            } else if (result.status === 'init_error') {
+                setStatusMessage({
+                    success: false,
+                    message: intl.formatMessage(
+                        {defaultMessage: 'Search initialization failed: {error}'},
+                        {error: result.error || intl.formatMessage({defaultMessage: 'Unknown error'})},
+                    ),
+                });
+            } else {
+                setHealthCheckResult(result);
+            }
+        } catch (error) {
+            setStatusMessage({
+                success: false,
+                message: intl.formatMessage({defaultMessage: 'Failed to check index health.'}),
+            });
+        } finally {
+            setHealthCheckLoading(false);
+        }
+    };
+
     // Check status on component mount
     useEffect(() => {
         fetchJobStatus();
@@ -161,36 +191,6 @@ export const useJobStatus = () => {
                 success: false,
                 message: intl.formatMessage({defaultMessage: 'Failed to start catch-up indexing. Make sure a full reindex has been completed first.'}),
             });
-        }
-    };
-
-    const handleHealthCheck = async () => {
-        setHealthCheckLoading(true);
-        setHealthCheckResult(null);
-
-        try {
-            const result = await checkIndexHealth();
-            if (result.status === 'not_configured') {
-                // Search not configured yet - don't show as error
-                setHealthCheckResult(null);
-            } else if (result.status === 'init_error') {
-                setStatusMessage({
-                    success: false,
-                    message: intl.formatMessage(
-                        {defaultMessage: 'Search initialization failed: {error}'},
-                        {error: result.error || intl.formatMessage({defaultMessage: 'Unknown error'})},
-                    ),
-                });
-            } else {
-                setHealthCheckResult(result);
-            }
-        } catch (error) {
-            setStatusMessage({
-                success: false,
-                message: intl.formatMessage({defaultMessage: 'Failed to check index health.'}),
-            });
-        } finally {
-            setHealthCheckLoading(false);
         }
     };
 
