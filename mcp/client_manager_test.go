@@ -513,10 +513,14 @@ func TestClientManager_GetToolsForUser_PluginConnectErrorsAreRequestScoped(t *te
 	target := newFakePluginMCPServer(t, 1)
 	t.Cleanup(target.Close)
 
-	var calls atomic.Int32
+	// The plugin is down for the whole of the first request and healthy for the
+	// second. Failing a fixed number of HTTP calls instead would not describe an
+	// outage: the transport retries, so the request can still succeed.
+	var down atomic.Bool
+	down.Store(true)
 	mockAPI := &fakePluginHTTPClient{
 		pluginHTTP: func(req *http.Request) *http.Response {
-			if calls.Add(1) == 1 {
+			if down.Load() {
 				rec := httptest.NewRecorder()
 				rec.WriteHeader(http.StatusInternalServerError)
 				return rec.Result()
@@ -545,6 +549,8 @@ func TestClientManager_GetToolsForUser_PluginConnectErrorsAreRequestScoped(t *te
 	require.Empty(t, tools)
 	require.NotNil(t, mcpErrors)
 	require.NotEmpty(t, mcpErrors.Errors)
+
+	down.Store(false)
 
 	tools, mcpErrors = m.GetToolsForUser(context.Background(), "alice")
 	require.Nil(t, mcpErrors, "successful plugin reconnect must not return the prior transient error")
