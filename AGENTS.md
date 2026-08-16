@@ -6,6 +6,39 @@
 
 Mattermost server plugin (`mattermost-ai`) that integrates LLM providers. Go 1.26 backend + React/TypeScript webapp (Node 24.11).
 
+## The server this runs in serves its API at /v1/workspace
+
+`go.mod` replaces `github.com/mattermost/mattermost/server/public` with
+`github.com/hanzoteam/server/server/public`, and that is load-bearing rather than
+housekeeping: `model.APIURLSuffix` is `/v1/workspace` in our fork and `/api/v4`
+upstream, and `model.NewAPIv4Client` builds every URL from it. Pointed at
+upstream, session validation GETs `/api/v4/users/me`, the server answers 404, the
+embedded MCP transport cannot open, and the Agents panel hangs at "Setting up
+chat channel…" with nothing behind it. Do not spell the prefix here to work
+around it — one fact, one home, and the module is the home.
+
+Check the CONSTANT after any bump, never the version number: the fork's published
+`server/public/v0.4.3` still carried `/api/v4`, so a tag that looks newer can be
+wrong. `go list -m -f '{{.Replace.Dir}}'` then grep `APIURLSuffix` in
+`model/client4.go`.
+
+## Push to git.hanzo.ai
+
+`git.hanzo.ai/hanzoteam/agents` is canonical; `github.com/hanzoteam/agents` is a
+copy with no push mirror keeping it current, so it drifts silently. Its sibling
+`hanzoteam/server` drifted nine releases that way. Run
+`git config --get remote.origin.url` before committing.
+
+The image is built by `platform.hanzo.ai` (`POST /v1/runner`), not by CI here, and
+it publishes `ghcr.io/hanzoteam/agents:<VERSION>`. Two things bite: the enqueue is
+idempotent on `(repo, sha, target)` **regardless of status**, so deleting a wedged
+k8s Job leaves its `build_job` row and the next request returns the same dead id;
+and the registry credential is derived from the destination image, so the build
+mounts `push-hanzoteam` and sits in ContainerCreating if it is missing. The
+deployed bundle reaches the server through an init container in
+`universe/charts/app/values/hanzo/team-app.yaml` — bump the tag there, and it
+rolls itself.
+
 ## Commands
 
 `make help` lists every documented target with a one-line description.
