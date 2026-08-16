@@ -5,6 +5,7 @@ package bots
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"net/http"
@@ -424,40 +425,77 @@ func (b *MMBots) ensureDefaultProfileImage(bot *Bot) {
 		return
 	}
 
-	want := assets.AgentProfilePicture(bot.cfg.Name)
-
-	// A picture already set is USUALLY someone's choice and must be left alone —
-	// but every one of these bots was born carrying the single shared icon we used
-	// to set for all of them, so "has a picture" was also true of every agent that
-	// had never been chosen for. Gating on that alone meant the role icons could
-	// only ever reach a workspace created after them, and existing rosters kept
-	// sixteen copies of one face forever.
+	// "Has a picture" cannot answer whether the picture is OURS, and that is the
+	// only question worth asking: every agent was born carrying the one shared icon
+	// we set for all of them, so gating on LastPictureUpdate alone meant the role
+	// icons reached no existing roster — sixteen copies of one face, forever.
 	//
-	// So the question is not whether an image exists but whose it is: replace one
-	// that is still byte-for-byte the icon WE set, and never touch anything else.
-	// A human who picks an avatar differs from our bytes on the first pixel.
-	if user.LastPictureUpdate != 0 && !b.hasProfileImage(bot, assets.DefaultAgentProfilePicture) {
+	// Comparing bytes against the asset does not work either, and it is worth
+	// writing down why so nobody tries it again: the server RE-ENCODES a profile
+	// image on upload. The icon we hand over at 180,500 bytes comes back from
+	// GetProfileImage as 17,659 — same picture, different file — so an equality
+	// test against our own embedded PNG can never be true.
+	//
+	// So we record what we set, in the server's words rather than ours: after
+	// setting an image, read back what it stored and remember that digest. Ours is
+	// then exactly "the digest we remember", and a picture a person chose differs
+	// from it. The first pass for a bot has nothing remembered and adopts it — these
+	// bots are ours, created by this plugin — and every pass after that is precise.
+	if !b.avatarIsOurs(bot, user) {
 		return
 	}
 
+	want := assets.AgentProfilePicture(bot.cfg.Name)
 	if err := b.pluginAPI.User.SetProfileImage(bot.mmBot.UserId, bytes.NewReader(want)); err != nil {
 		b.pluginAPI.Log.Error("Failed to set bot profile image", "bot_name", bot.cfg.Name, "error", err.Error())
+		return
+	}
+	b.rememberAvatar(bot)
+}
+
+// avatarKey names where a bot's remembered avatar digest lives.
+func avatarKey(userID string) string { return "agent_avatar_" + userID }
+
+// avatarIsOurs reports whether this bot's current avatar is one we set.
+// A bot with no picture at all is trivially ours to set. A bot we have never
+// recorded is adopted once — the plugin created these accounts — and recorded
+// from then on. Anything that no longer matches what we remember belongs to
+// whoever changed it, and is left alone.
+func (b *MMBots) avatarIsOurs(bot *Bot, user *model.User) bool {
+	if user.LastPictureUpdate == 0 {
+		return true
+	}
+	var remembered string
+	if err := b.pluginAPI.KV.Get(avatarKey(bot.mmBot.UserId), &remembered); err != nil || remembered == "" {
+		return true
+	}
+	return remembered == b.storedAvatarDigest(bot)
+}
+
+// rememberAvatar records the digest of what the server actually stored, which is
+// not the bytes we handed it — the upload is re-encoded.
+func (b *MMBots) rememberAvatar(bot *Bot) {
+	digest := b.storedAvatarDigest(bot)
+	if digest == "" {
+		return
+	}
+	if _, err := b.pluginAPI.KV.Set(avatarKey(bot.mmBot.UserId), digest); err != nil {
+		b.pluginAPI.Log.Warn("Failed to record bot avatar digest", "bot_name", bot.cfg.Name, "error", err.Error())
 	}
 }
 
-// hasProfileImage reports whether the bot's current avatar is exactly want.
-// A read that fails answers false, which leaves the existing picture in place —
-// the safe direction when we cannot tell whose it is.
-func (b *MMBots) hasProfileImage(bot *Bot, want []byte) bool {
+// storedAvatarDigest is the digest of the image the server is serving for this
+// bot, or "" if it cannot be read.
+func (b *MMBots) storedAvatarDigest(bot *Bot) string {
 	r, err := b.pluginAPI.User.GetProfileImage(bot.mmBot.UserId)
 	if err != nil || r == nil {
-		return false
+		return ""
 	}
 	got, err := io.ReadAll(r)
 	if err != nil {
-		return false
+		return ""
 	}
-	return bytes.Equal(got, want)
+	return fmt.Sprintf("%x", sha256.Sum256(got))
 }
 
 func (b *MMBots) getLLM(serviceConfig llm.ServiceConfig, botConfig llm.BotConfig, fallbackServices []llm.ServiceConfig) (llm.LanguageModel, error) {

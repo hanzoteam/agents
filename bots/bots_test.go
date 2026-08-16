@@ -1159,6 +1159,8 @@ func TestEnsureDefaultProfileImageUsesRoleMatchedIcon(t *testing.T) {
 
 	mockAPI.On("GetUser", "bot-user-id").Return(&model.User{LastPictureUpdate: 0}, nil).Once()
 	mockAPI.On("SetProfileImage", "bot-user-id", assets.AgentProfilePicture("dev")).Return(nil).Once()
+	mockAPI.On("GetProfileImage", "bot-user-id").Return([]byte("re-encoded by the server"), nil).Once()
+	mockAPI.On("KVSetWithOptions", avatarKey("bot-user-id"), mock.Anything, mock.Anything).Return(true, nil).Once()
 
 	bot := NewBot(llm.BotConfig{Name: "dev"}, llm.ServiceConfig{}, &model.Bot{UserId: "bot-user-id"}, nil)
 	mmBots.ensureDefaultProfileImage(bot)
@@ -1175,6 +1177,8 @@ func TestEnsureDefaultProfileImageUnknownAgentFallsBackToDefault(t *testing.T) {
 
 	mockAPI.On("GetUser", "bot-user-id").Return(&model.User{LastPictureUpdate: 0}, nil).Once()
 	mockAPI.On("SetProfileImage", "bot-user-id", assets.DefaultAgentProfilePicture).Return(nil).Once()
+	mockAPI.On("GetProfileImage", "bot-user-id").Return([]byte("re-encoded by the server"), nil).Once()
+	mockAPI.On("KVSetWithOptions", avatarKey("bot-user-id"), mock.Anything, mock.Anything).Return(true, nil).Once()
 
 	bot := NewBot(llm.BotConfig{Name: "not-a-real-agent"}, llm.ServiceConfig{}, &model.Bot{UserId: "bot-user-id"}, nil)
 	mmBots.ensureDefaultProfileImage(bot)
@@ -1182,15 +1186,17 @@ func TestEnsureDefaultProfileImageUnknownAgentFallsBackToDefault(t *testing.T) {
 	mockAPI.AssertExpectations(t)
 }
 
-// TestEnsureDefaultProfileImageLeavesAHumansAvatarAlone pins the half of the
-// rule that protects a choice somebody made: an avatar whose bytes are not ours
-// is never replaced.
-func TestEnsureDefaultProfileImageLeavesAHumansAvatarAlone(t *testing.T) {
+// TestEnsureDefaultProfileImageLeavesAChangedAvatarAlone pins the half that
+// protects a choice somebody made: once we have recorded what we set, an image
+// that no longer matches belongs to whoever changed it.
+func TestEnsureDefaultProfileImageLeavesAChangedAvatarAlone(t *testing.T) {
 	cfg := &mockConfig{}
 	mmBots := newTestMMBots(t, cfg)
 	mockAPI := mmBots.ensureBotsClusterMutex.(*plugintest.API)
 
+	remembered, _ := json.Marshal("0000000000000000000000000000000000000000000000000000000000000000")
 	mockAPI.On("GetUser", "bot-user-id").Return(&model.User{LastPictureUpdate: 12345}, nil).Once()
+	mockAPI.On("KVGet", avatarKey("bot-user-id")).Return(remembered, nil).Once()
 	mockAPI.On("GetProfileImage", "bot-user-id").Return([]byte("a picture a person chose"), nil).Once()
 
 	bot := NewBot(llm.BotConfig{Name: "dev"}, llm.ServiceConfig{}, &model.Bot{UserId: "bot-user-id"}, nil)
@@ -1200,18 +1206,20 @@ func TestEnsureDefaultProfileImageLeavesAHumansAvatarAlone(t *testing.T) {
 	mockAPI.AssertNotCalled(t, "SetProfileImage", mock.Anything, mock.Anything)
 }
 
-// TestEnsureDefaultProfileImageReplacesOurOwnOldDefault pins the other half.
-// Every existing agent carries the shared icon we used to set for all of them,
-// so gating on "has a picture" alone would keep those rosters on one face
-// forever — the role icons would only ever reach a workspace created after them.
-func TestEnsureDefaultProfileImageReplacesOurOwnOldDefault(t *testing.T) {
+// TestEnsureDefaultProfileImageAdoptsAnUnrecordedBot pins the other half, and the
+// reason it exists: every agent already carries the one shared icon we set, and
+// the server RE-ENCODES an upload, so the stored bytes never equal the asset we
+// handed over. Without adoption the role icons reach no existing roster at all.
+func TestEnsureDefaultProfileImageAdoptsAnUnrecordedBot(t *testing.T) {
 	cfg := &mockConfig{}
 	mmBots := newTestMMBots(t, cfg)
 	mockAPI := mmBots.ensureBotsClusterMutex.(*plugintest.API)
 
 	mockAPI.On("GetUser", "bot-user-id").Return(&model.User{LastPictureUpdate: 12345}, nil).Once()
-	mockAPI.On("GetProfileImage", "bot-user-id").Return(assets.DefaultAgentProfilePicture, nil).Once()
+	mockAPI.On("KVGet", avatarKey("bot-user-id")).Return(nil, nil).Once()
 	mockAPI.On("SetProfileImage", "bot-user-id", assets.AgentProfilePicture("dev")).Return(nil).Once()
+	mockAPI.On("GetProfileImage", "bot-user-id").Return([]byte("re-encoded by the server"), nil).Once()
+	mockAPI.On("KVSetWithOptions", avatarKey("bot-user-id"), mock.Anything, mock.Anything).Return(true, nil).Once()
 
 	bot := NewBot(llm.BotConfig{Name: "dev"}, llm.ServiceConfig{}, &model.Bot{UserId: "bot-user-id"}, nil)
 	mmBots.ensureDefaultProfileImage(bot)
