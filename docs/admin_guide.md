@@ -173,6 +173,34 @@ Updating an agent's display name also updates the linked Mattermost bot display 
 
 Legacy bots previously stored in plugin configuration are migrated on startup into database-backed agents and then managed from the **Agents** page. Migrated agents don't have a creator and can be managed by system admins.
 
+#### Import an agent definition
+
+An agent is a JSON document, and `POST /plugins/mattermost-ai/agents` takes it
+whole. There is no separate import format to convert to and no bulk endpoint —
+a definition written once is portable to any workspace running this plugin, and
+importing a set of them is that request in a loop.
+
+```json
+{
+  "displayName": "Researcher",
+  "username": "researcher",
+  "serviceID": "<from GET /plugins/mattermost-ai/services>",
+  "customInstructions": "…",
+  "autoEnableNewMCPTools": true,
+  "mcpDynamicToolLoading": true
+}
+```
+
+One field cannot travel with the definition: `serviceID` names an LLM service
+configured on this workspace, so an importer resolves it against
+`GET /plugins/mattermost-ai/services` before posting. The same applies to any
+`enabledMCPTools` entries, which name servers by origin — setting
+`autoEnableNewMCPTools` avoids pinning tool names to one workspace's server list.
+
+`username` is fixed at creation and must be unique among Mattermost users; a
+collision answers 409. `PUT /plugins/mattermost-ai/agents/:id` replaces the whole
+document, so re-importing an existing agent is an update rather than a duplicate.
+
 ### Custom instructions
 
 Text input in the custom instructions field is included in the prompt for every request. Use this to give your agents extra context or instructions. 
@@ -577,6 +605,39 @@ You can't disable MCP entirely from the System Console. To limit access, disable
    - **Server Name**: Descriptive name for the server (auto-generated if not provided).
 
 3. Select **Save** to add the server.
+
+### Give an agent Hanzo cloud
+
+Hanzo cloud answers MCP at a single address, `https://api.hanzo.ai/v1/mcp`, for
+its whole fleet. Add it like any other remote server — the URL above, and a
+custom header `Authorization` with the value `Bearer <token>` for an IAM token
+scoped to your organization. Nothing else is server-specific.
+
+What arrives is one tool per subsystem rather than one per operation, plus a
+`describe` tool. Each subsystem tool carries its operations in an `op` enum and
+takes `{"op": "<operation>", "input": {…}}`; the model reads an operation's
+schema with `describe` and then calls it. That shape is what keeps a fleet this
+size inside a model's context — measured on the live door, 121 tools, of which
+the ones that do real work include `exec` (run a program in a sandbox), `code`,
+`sandboxes`, `storage`, `git`, `deploy`, `websearch`, `crawl`, and `research`.
+
+Two settings on the agent decide whether it can actually see them, and both live
+on the agent's **MCPs** tab:
+
+- **Automatically enable all MCP tools** — without it, the agent is limited to
+  the tools in its own allowlist, and a subsystem tool added to the door later
+  will not reach it.
+- **MCP dynamic tool loading** — leave this on. The door's catalog is tens of
+  kilobytes of schema; with dynamic loading the agent searches it and loads the
+  one tool it picked, instead of carrying all of it every turn.
+
+Two properties are worth knowing before you hand this to a team. Listing the
+tools needs no credential, so a server that looks connected proves nothing about
+the token — a tool call is what tells you, because calls that do real work refuse
+without a valid one. And a token set in **Custom Headers** is one credential for
+the whole server: every user's tool calls carry it, and cloud attributes the work
+to it rather than to the person in the channel. Per-user OAuth is the alternative
+where the upstream supports it (see [OAuth-backed MCP servers](#oauth-backed-mcp-servers)).
 
 ### Plugin-registered MCP servers
 

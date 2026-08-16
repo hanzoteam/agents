@@ -26,6 +26,13 @@ func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 func (c *Client) httpClientForMCP(headers map[string]string) *http.Client {
 	httpClient := *c.httpClient
 
+	// A nil Transport means http.DefaultTransport, which net/http substitutes at
+	// call time. The wrappers below call the base themselves, so resolve it here
+	// — once, rather than in each RoundTrip.
+	if httpClient.Transport == nil {
+		httpClient.Transport = http.DefaultTransport
+	}
+
 	// Plugin-server clients have a nil oauthManager and must skip the auth
 	// wrapper, which would otherwise dereference it on every RoundTrip.
 	if c.oauthManager != nil {
@@ -35,7 +42,7 @@ func (c *Client) httpClientForMCP(headers map[string]string) *http.Client {
 			manager:     c.oauthManager,
 			serverURL:   c.config.BaseURL,
 			staticCreds: staticOAuthCreds(c.config),
-			base:        c.httpClient.Transport,
+			base:        httpClient.Transport,
 		}
 		httpClient.Transport = authenticationTransport
 	}
