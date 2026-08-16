@@ -1182,19 +1182,39 @@ func TestEnsureDefaultProfileImageUnknownAgentFallsBackToDefault(t *testing.T) {
 	mockAPI.AssertExpectations(t)
 }
 
-// TestEnsureDefaultProfileImageSkipsWhenUserAlreadyHasPicture pins that the
-// per-agent icon change did not touch the guard against overwriting a
-// picture a human already set on the bot account.
-func TestEnsureDefaultProfileImageSkipsWhenUserAlreadyHasPicture(t *testing.T) {
+// TestEnsureDefaultProfileImageLeavesAHumansAvatarAlone pins the half of the
+// rule that protects a choice somebody made: an avatar whose bytes are not ours
+// is never replaced.
+func TestEnsureDefaultProfileImageLeavesAHumansAvatarAlone(t *testing.T) {
 	cfg := &mockConfig{}
 	mmBots := newTestMMBots(t, cfg)
 	mockAPI := mmBots.ensureBotsClusterMutex.(*plugintest.API)
 
 	mockAPI.On("GetUser", "bot-user-id").Return(&model.User{LastPictureUpdate: 12345}, nil).Once()
+	mockAPI.On("GetProfileImage", "bot-user-id").Return([]byte("a picture a person chose"), nil).Once()
 
 	bot := NewBot(llm.BotConfig{Name: "dev"}, llm.ServiceConfig{}, &model.Bot{UserId: "bot-user-id"}, nil)
 	mmBots.ensureDefaultProfileImage(bot)
 
 	mockAPI.AssertExpectations(t)
 	mockAPI.AssertNotCalled(t, "SetProfileImage", mock.Anything, mock.Anything)
+}
+
+// TestEnsureDefaultProfileImageReplacesOurOwnOldDefault pins the other half.
+// Every existing agent carries the shared icon we used to set for all of them,
+// so gating on "has a picture" alone would keep those rosters on one face
+// forever — the role icons would only ever reach a workspace created after them.
+func TestEnsureDefaultProfileImageReplacesOurOwnOldDefault(t *testing.T) {
+	cfg := &mockConfig{}
+	mmBots := newTestMMBots(t, cfg)
+	mockAPI := mmBots.ensureBotsClusterMutex.(*plugintest.API)
+
+	mockAPI.On("GetUser", "bot-user-id").Return(&model.User{LastPictureUpdate: 12345}, nil).Once()
+	mockAPI.On("GetProfileImage", "bot-user-id").Return(assets.DefaultAgentProfilePicture, nil).Once()
+	mockAPI.On("SetProfileImage", "bot-user-id", assets.AgentProfilePicture("dev")).Return(nil).Once()
+
+	bot := NewBot(llm.BotConfig{Name: "dev"}, llm.ServiceConfig{}, &model.Bot{UserId: "bot-user-id"}, nil)
+	mmBots.ensureDefaultProfileImage(bot)
+
+	mockAPI.AssertExpectations(t)
 }

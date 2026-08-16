@@ -424,13 +424,40 @@ func (b *MMBots) ensureDefaultProfileImage(bot *Bot) {
 		return
 	}
 
-	if user.LastPictureUpdate != 0 {
+	want := assets.AgentProfilePicture(bot.cfg.Name)
+
+	// A picture already set is USUALLY someone's choice and must be left alone —
+	// but every one of these bots was born carrying the single shared icon we used
+	// to set for all of them, so "has a picture" was also true of every agent that
+	// had never been chosen for. Gating on that alone meant the role icons could
+	// only ever reach a workspace created after them, and existing rosters kept
+	// sixteen copies of one face forever.
+	//
+	// So the question is not whether an image exists but whose it is: replace one
+	// that is still byte-for-byte the icon WE set, and never touch anything else.
+	// A human who picks an avatar differs from our bytes on the first pixel.
+	if user.LastPictureUpdate != 0 && !b.hasProfileImage(bot, assets.DefaultAgentProfilePicture) {
 		return
 	}
 
-	if err := b.pluginAPI.User.SetProfileImage(bot.mmBot.UserId, bytes.NewReader(assets.AgentProfilePicture(bot.cfg.Name))); err != nil {
+	if err := b.pluginAPI.User.SetProfileImage(bot.mmBot.UserId, bytes.NewReader(want)); err != nil {
 		b.pluginAPI.Log.Error("Failed to set bot profile image", "bot_name", bot.cfg.Name, "error", err.Error())
 	}
+}
+
+// hasProfileImage reports whether the bot's current avatar is exactly want.
+// A read that fails answers false, which leaves the existing picture in place —
+// the safe direction when we cannot tell whose it is.
+func (b *MMBots) hasProfileImage(bot *Bot, want []byte) bool {
+	r, err := b.pluginAPI.User.GetProfileImage(bot.mmBot.UserId)
+	if err != nil || r == nil {
+		return false
+	}
+	got, err := io.ReadAll(r)
+	if err != nil {
+		return false
+	}
+	return bytes.Equal(got, want)
 }
 
 func (b *MMBots) getLLM(serviceConfig llm.ServiceConfig, botConfig llm.BotConfig, fallbackServices []llm.ServiceConfig) (llm.LanguageModel, error) {
