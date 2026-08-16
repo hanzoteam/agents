@@ -14,7 +14,18 @@ const config = {
             debug: false,
             shippedProposals: true,
         }],
-        ['@babel/preset-react'],
+
+        // runtime STATED, not defaulted. Babel 8 changed this default from
+        // 'classic' to 'automatic', and automatic is wrong for a plugin: it
+        // compiles JSX into imports from `react/jsx-runtime`, while webpack.config
+        // externalises only the bare `react` specifier — so the host's React is
+        // used for everything except JSX creation, which reaches for a module the
+        // host does not hand over. In production that shipped calls to `jsxDEV`,
+        // a development-only export the host's React does not have, and every
+        // agent post died in the error boundary with "(0 , uo.jsxDEV) is not a
+        // function". Classic compiles to React.createElement — which IS what the
+        // external provides.
+        ['@babel/preset-react', {runtime: 'classic'}],
 
         // Babel 8 removed .allExtensions/.isTSX: JSX is detected from the file
         // extension, and every file here is already .ts or .tsx.
