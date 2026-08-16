@@ -43,10 +43,10 @@ WORKDIR /src/webapp
 # and fails at the point that actually needs one — an unauthenticated fetch of a
 # gated package — instead of failing here with something that reads like a
 # Dockerfile bug. A checkout with no @hanzoteam dependency builds unchanged.
-RUN --mount=type=secret,id=REGISTRY_TOKEN \
-    if [ -s /run/secrets/REGISTRY_TOKEN ]; then \
+RUN --mount=type=secret,id=package_token \
+    if [ -s /run/secrets/package_token ]; then \
         printf '//api.hanzo.ai/v1/packages/hanzoteam/npm/:_authToken=%s\n' \
-            "$(cat /run/secrets/REGISTRY_TOKEN)" >> .npmrc; \
+            "$(cat /run/secrets/package_token)" >> .npmrc; \
     fi && \
     npm ci --no-audit --no-fund && npm run build && \
     sed -i '/_authToken/d' .npmrc
