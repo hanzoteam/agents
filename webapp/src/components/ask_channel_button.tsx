@@ -5,7 +5,7 @@ import React, {useRef, useState, useEffect} from 'react';
 import styled, {css} from 'styled-components';
 import {useSelector, useDispatch} from 'react-redux';
 import {GlobalState} from '@hanzoteam/types/store';
-//eslint-disable-next-line import/no-unresolved -- react-bootstrap is external
+//eslint-disable-next-line import-x/no-unresolved -- react-bootstrap is external
 import {OverlayTrigger, Tooltip, Overlay} from 'react-bootstrap';
 import {FormattedMessage, useIntl} from 'react-intl';
 

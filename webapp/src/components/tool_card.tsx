@@ -7,7 +7,7 @@ import {FormattedMessage, useIntl} from 'react-intl';
 import {ChevronDownIcon, ChevronRightIcon, CheckIcon, AlertCircleOutlineIcon, CloseCircleOutlineIcon, GlobeIcon, LockIcon} from '@hanzoteam/compass-icons/components';
 import {useSelector} from 'react-redux';
 
-// eslint-disable-next-line import/no-unresolved -- react-bootstrap is external
+// eslint-disable-next-line import-x/no-unresolved -- react-bootstrap is external
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {GlobalState} from '@hanzoteam/types/store';

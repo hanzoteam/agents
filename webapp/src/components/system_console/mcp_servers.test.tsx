@@ -38,11 +38,11 @@ jest.mock('../../client', () => ({
     updatePluginServer: jest.fn().mockResolvedValue({}),
 }));
 
-/* eslint-disable import/first, import/order */
+/* eslint-disable import-x/first, import-x/order */
 import {IntlProvider} from 'react-intl';
 
 import MCPServers, {MCPConfig, MCPServerConfig} from './mcp_servers';
-/* eslint-enable import/first, import/order */
+/* eslint-enable import-x/first, import-x/order */
 
 function makeMCPConfig(servers: MCPServerConfig[] = []): MCPConfig {
     return {

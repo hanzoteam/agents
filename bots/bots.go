@@ -428,7 +428,7 @@ func (b *MMBots) ensureDefaultProfileImage(bot *Bot) {
 		return
 	}
 
-	if err := b.pluginAPI.User.SetProfileImage(bot.mmBot.UserId, bytes.NewReader(assets.DefaultAgentProfilePicture)); err != nil {
+	if err := b.pluginAPI.User.SetProfileImage(bot.mmBot.UserId, bytes.NewReader(assets.AgentProfilePicture(bot.cfg.Name))); err != nil {
 		b.pluginAPI.Log.Error("Failed to set bot profile image", "bot_name", bot.cfg.Name, "error", err.Error())
 	}
 }

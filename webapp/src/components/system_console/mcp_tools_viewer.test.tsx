@@ -35,14 +35,14 @@ jest.mock('../../client', () => ({
     updatePluginServer: jest.fn().mockResolvedValue({}),
 }));
 
-/* eslint-disable import/first, import/order */
+/* eslint-disable import-x/first, import-x/order */
 import {IntlProvider} from 'react-intl';
 
 import {clearMCPToolsCache, getMCPTools, getVettedToolSeed, updatePluginServer} from '../../client';
 
 import MCPToolsViewer, {MCPToolsResponse} from './mcp_tools_viewer';
 import {MCPConfig} from './mcp_servers';
-/* eslint-enable import/first, import/order */
+/* eslint-enable import-x/first, import-x/order */
 
 const mockGetMCPTools = getMCPTools as jest.Mock;
 const mockClearMCPToolsCache = clearMCPToolsCache as jest.Mock;

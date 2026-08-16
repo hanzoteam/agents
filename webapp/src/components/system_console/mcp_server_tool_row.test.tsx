@@ -27,13 +27,13 @@ jest.mock('react-intl', () => {
     };
 });
 
-/* eslint-disable import/first */
+/* eslint-disable import-x/first */
 import {IntlProvider} from 'react-intl';
 
 import MCPServerToolRow from './mcp_server_tool_row';
 import {MCPServerInfo} from './mcp_tools_viewer';
 import {MCPServerConfig} from './mcp_servers';
-/* eslint-enable import/first */
+/* eslint-enable import-x/first */
 
 function makePluginServer(): MCPServerInfo {
     return {

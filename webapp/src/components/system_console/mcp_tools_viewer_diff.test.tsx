@@ -60,14 +60,14 @@ jest.mock('./mcp_server_tool_row', () => ({
     },
 }));
 
-/* eslint-disable import/first, import/order */
+/* eslint-disable import-x/first, import-x/order */
 import {IntlProvider} from 'react-intl';
 
 import {updatePluginServer} from '../../client';
 
 import MCPToolsViewer, {MCPToolsResponse} from './mcp_tools_viewer';
 import {MCPConfig} from './mcp_servers';
-/* eslint-enable import/first, import/order */
+/* eslint-enable import-x/first, import-x/order */
 
 const mockUpdatePluginServer = updatePluginServer as jest.Mock;
 

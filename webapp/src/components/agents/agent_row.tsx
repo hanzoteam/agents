@@ -9,7 +9,7 @@ import {
     PencilOutlineIcon,
     TrashCanOutlineIcon,
 } from '@hanzoteam/compass-icons/components';
-//eslint-disable-next-line import/no-unresolved -- react-bootstrap is external
+//eslint-disable-next-line import-x/no-unresolved -- react-bootstrap is external
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 import {getProfilePictureUrl} from '@/client';

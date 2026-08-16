@@ -56,7 +56,7 @@ RUN --mount=type=secret,id=package_token \
 # find at the root of the archive.
 FROM busybox:1.37 AS bundle
 WORKDIR /bundle/mattermost-ai
-COPY --from=manifest /src/plugin.json /src/LICENSE.txt /src/NOTICE.txt ./
+COPY --from=manifest /src/plugin.json /src/LICENSE.txt /src/NOTICE ./
 COPY --from=manifest /src/assets ./assets
 COPY --from=manifest /src/public ./public
 COPY --from=server /src/server/dist ./server/dist

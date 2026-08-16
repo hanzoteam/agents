@@ -6,11 +6,9 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import {defineConfig, globalIgnores} from 'eslint/config';
-import {fixupConfigRules, fixupPluginRules} from '@eslint/compat';
+import {fixupConfigRules} from '@eslint/compat';
 import react from 'eslint-plugin-react';
-import _import from 'eslint-plugin-import';
-import cypress from 'eslint-plugin-cypress';
-import noOnlyTests from 'eslint-plugin-no-only-tests';
+import importX from 'eslint-plugin-import-x';
 import typescriptEslint from '@typescript-eslint/eslint-plugin';
 import headers from 'eslint-plugin-headers';
 import globals from 'globals';
@@ -28,18 +26,23 @@ const compat = new FlatCompat({
 });
 
 export default defineConfig([globalIgnores(['src/manifest.*']), {
-    extends: fixupConfigRules(compat.extends(
-        'eslint:recommended',
-        'plugin:react-hooks/recommended',
-        'plugin:import/recommended',
-        'plugin:import/typescript',
-    )),
+
+    // import-x ships flat configs directly, so it is composed as one rather than
+    // dragged through the eslintrc compat layer — which is also what kept pulling
+    // eslint-plugin-import back in and running its rules under the old `import/`
+    // prefix beside ours.
+    extends: [
+        ...fixupConfigRules(compat.extends(
+            'eslint:recommended',
+            'plugin:react-hooks/recommended',
+        )),
+        importX.flatConfigs.recommended,
+        importX.flatConfigs.typescript,
+    ],
 
     plugins: {
         react,
-        import: fixupPluginRules(_import),
-        cypress,
-        'no-only-tests': noOnlyTests,
+        'import-x': importX,
         '@typescript-eslint': typescriptEslint,
         headers,
     },
@@ -66,7 +69,7 @@ export default defineConfig([globalIgnores(['src/manifest.*']), {
     },
 
     settings: {
-        'import/resolver': {
+        'import-x/resolver': {
             typescript: {
                 project: './tsconfig.json',
             },
@@ -156,9 +159,9 @@ export default defineConfig([globalIgnores(['src/manifest.*']), {
         'global-require': 2,
         'guard-for-in': 2,
         'id-blacklist': 0,
-        'import/no-unresolved': 2,
+        'import-x/no-unresolved': 2,
 
-        'import/order': ['error', {
+        'import-x/order': ['error', {
             'newlines-between': 'always-and-inside-groups',
             groups: ['builtin', 'external', ['internal', 'parent'], 'sibling', 'index'],
         }],

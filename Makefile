@@ -367,8 +367,8 @@ bundle:
 ifneq ($(wildcard LICENSE.txt),)
 	cp -r LICENSE.txt $(BUNDLE_DIR)/$(PLUGIN_ID)/
 endif
-ifneq ($(wildcard NOTICE.txt),)
-	cp -r NOTICE.txt $(BUNDLE_DIR)/$(PLUGIN_ID)/
+ifneq ($(wildcard NOTICE),)
+	cp -r NOTICE $(BUNDLE_DIR)/$(PLUGIN_ID)/
 endif
 ifneq ($(wildcard $(ASSETS_DIR)/.),)
 	cp -r $(ASSETS_DIR) $(BUNDLE_DIR)/$(PLUGIN_ID)/

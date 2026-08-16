@@ -12,6 +12,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/mattermost/mattermost-plugin-agents/v2/assets"
 	"github.com/mattermost/mattermost-plugin-agents/v2/llm"
 	"github.com/mattermost/mattermost-plugin-agents/v2/loadtest"
 	"github.com/mattermost/mattermost/server/public/model"
@@ -1146,4 +1147,54 @@ func TestPoweredByDescription(t *testing.T) {
 			assert.LessOrEqual(t, utf8.RuneCountInString(got), model.BotDescriptionMaxRunes)
 		})
 	}
+}
+
+// TestEnsureDefaultProfileImageUsesRoleMatchedIcon pins that
+// ensureDefaultProfileImage sets the icon matching the bot's own name rather
+// than the shared DefaultAgentProfilePicture.
+func TestEnsureDefaultProfileImageUsesRoleMatchedIcon(t *testing.T) {
+	cfg := &mockConfig{}
+	mmBots := newTestMMBots(t, cfg)
+	mockAPI := mmBots.ensureBotsClusterMutex.(*plugintest.API)
+
+	mockAPI.On("GetUser", "bot-user-id").Return(&model.User{LastPictureUpdate: 0}, nil).Once()
+	mockAPI.On("SetProfileImage", "bot-user-id", assets.AgentProfilePicture("dev")).Return(nil).Once()
+
+	bot := NewBot(llm.BotConfig{Name: "dev"}, llm.ServiceConfig{}, &model.Bot{UserId: "bot-user-id"}, nil)
+	mmBots.ensureDefaultProfileImage(bot)
+
+	mockAPI.AssertExpectations(t)
+}
+
+// TestEnsureDefaultProfileImageUnknownAgentFallsBackToDefault pins that a bot
+// name with no role-matched icon still gets a picture: the shared default.
+func TestEnsureDefaultProfileImageUnknownAgentFallsBackToDefault(t *testing.T) {
+	cfg := &mockConfig{}
+	mmBots := newTestMMBots(t, cfg)
+	mockAPI := mmBots.ensureBotsClusterMutex.(*plugintest.API)
+
+	mockAPI.On("GetUser", "bot-user-id").Return(&model.User{LastPictureUpdate: 0}, nil).Once()
+	mockAPI.On("SetProfileImage", "bot-user-id", assets.DefaultAgentProfilePicture).Return(nil).Once()
+
+	bot := NewBot(llm.BotConfig{Name: "not-a-real-agent"}, llm.ServiceConfig{}, &model.Bot{UserId: "bot-user-id"}, nil)
+	mmBots.ensureDefaultProfileImage(bot)
+
+	mockAPI.AssertExpectations(t)
+}
+
+// TestEnsureDefaultProfileImageSkipsWhenUserAlreadyHasPicture pins that the
+// per-agent icon change did not touch the guard against overwriting a
+// picture a human already set on the bot account.
+func TestEnsureDefaultProfileImageSkipsWhenUserAlreadyHasPicture(t *testing.T) {
+	cfg := &mockConfig{}
+	mmBots := newTestMMBots(t, cfg)
+	mockAPI := mmBots.ensureBotsClusterMutex.(*plugintest.API)
+
+	mockAPI.On("GetUser", "bot-user-id").Return(&model.User{LastPictureUpdate: 12345}, nil).Once()
+
+	bot := NewBot(llm.BotConfig{Name: "dev"}, llm.ServiceConfig{}, &model.Bot{UserId: "bot-user-id"}, nil)
+	mmBots.ensureDefaultProfileImage(bot)
+
+	mockAPI.AssertExpectations(t)
+	mockAPI.AssertNotCalled(t, "SetProfileImage", mock.Anything, mock.Anything)
 }

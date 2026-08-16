@@ -73,7 +73,7 @@ class FakeDataTransfer {
 
 (globalThis as unknown as {DataTransfer: typeof FakeDataTransfer}).DataTransfer = FakeDataTransfer;
 
-// eslint-disable-next-line import/first
+// eslint-disable-next-line import-x/first
 import RhsFileDropZone from './rhs_file_drop_zone';
 
 function renderZone(children: React.ReactNode = null) {

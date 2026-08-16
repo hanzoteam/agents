@@ -5,6 +5,15 @@ Mattermost Agents Plugin
 NOTICES:
 --------
 
+Noto Color Emoji
+----------------
+The per-agent profile icons in assets/agents/ are unmodified 128x128 PNGs from
+the Noto Emoji project (https://github.com/googlefonts/noto-emoji), used under
+the SIL Open Font License 1.1 (https://scripts.sil.org/OFL).
+
+Copyright 2013-present Google Inc.
+
+
 This document includes a list of open source components used in the plugin, including those that have been modified.
 
 --------

@@ -56,7 +56,7 @@ function getAgentsProductLabel(store: WebappStore): string {
     const locale = state.entities?.i18n?.locale ?? 'en';
     let messages: Record<string, string>;
     try {
-        // eslint-disable-next-line global-require, import/no-dynamic-require
+        // eslint-disable-next-line global-require, import-x/no-dynamic-require
         messages = require(`./i18n/${locale}.json`);
     } catch {
         // eslint-disable-next-line global-require
