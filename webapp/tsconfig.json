@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"],
-	  "@hanzoteam/types/*": ["node_modules/@hanzoteam/types/lib/*"]
+      "@/*": ["./src/*"],
+	  "@hanzoteam/types/*": ["./node_modules/@hanzoteam/types/lib/*"]
     },
     "lib": [
       "dom",
@@ -18,12 +17,17 @@
     "strict": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "experimentalDecorators": true,
+    // Declared rather than discovered: under moduleResolution "bundler" the
+    // implicit @types sweep does not pick these up, and a test file losing its
+    // globals reads as hundreds of "Cannot find name 'describe'" errors that
+    // say nothing about the cause.
+    "types": ["jest", "node"],
     "jsx": "react"
   },
   "include": [

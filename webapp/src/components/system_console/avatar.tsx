@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import {FormattedMessage} from 'react-intl';
 
 //@ts-ignore it exists
-import aiIcon from 'src/../../assets/bot_icon.png';
+import aiIcon from '@/../../assets/bot_icon.png';
 
 import {getBotProfilePictureUrl} from '@/client';
 

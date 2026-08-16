@@ -28,9 +28,23 @@ jest.mock('react-intl', () => ({
     }),
 }));
 
-jest.mock('@hanzoteam/compass-icons/components', () => ({
+// Total, not enumerated: this component pulls in the system-console tree, which
+// reaches for icons this file never names. Listing only the two it asserts on
+// left the rest undefined, and `styled(undefined)` throws at module load — a
+// failure that reads as a styled-components bug three files away.
+jest.mock('@hanzoteam/compass-icons/components', () => new Proxy({
     ChevronDownIcon: () => <span data-testid='chevron-icon'/>,
     RefreshIcon: () => <span data-testid='refresh-icon'/>,
+} as Record<string, () => JSX.Element>, {
+
+    // Named icons keep their test ids; any OTHER *Icon this component's tree
+    // reaches for gets a blank stub, because `styled(undefined)` throws at module
+    // load and reads as a styled-components bug three files away. Everything that
+    // is not an icon falls through untouched — React probes the module for
+    // `$$typeof` and friends, and answering those with a component breaks it.
+    get: (named, name) => (typeof name === 'string' && name.endsWith('Icon') && !(name in named) ?
+        () => <span/> :
+        named[name as string]),
 }));
 
 const mockGetUserMCPTools = getUserMCPTools as jest.MockedFunction<typeof getUserMCPTools>;

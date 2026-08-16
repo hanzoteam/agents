@@ -17,7 +17,11 @@ jest.mock('react-intl', () => {
 
     return {
         __esModule: true,
-        IntlProvider: ({children}: {children: React.ReactNode}) => ReactLocal.createElement(ReactLocal.Fragment, null, children),
+
+        // `React.ReactNode` would be an out-of-scope identifier to babel's
+        // jest.mock hoist check, even in a type position, so the shim types
+        // its children structurally instead.
+        IntlProvider: ({children}: {children?: unknown}) => ReactLocal.createElement(ReactLocal.Fragment, null, children),
         FormattedMessage: ({defaultMessage, values}: {defaultMessage?: string; values?: Record<string, unknown>}) =>
             ReactLocal.createElement(ReactLocal.Fragment, null, interpolate(defaultMessage ?? '', values)),
         useIntl: () => ({
@@ -49,7 +53,10 @@ jest.mock('./mcp_server_tool_row', () => ({
     __esModule: true,
     default: (props: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         capturedHandlers.push({cb: props.onServerConfigChange, serverName: props.server?.name ?? ''});
-        return React.createElement('div', {'data-testid': 'row-stub'}, null);
+
+        // require inside the factory: the hoisted mock cannot close over the
+        // file's own React import.
+        return require('react').createElement('div', {'data-testid': 'row-stub'}, null); // eslint-disable-line global-require
     },
 }));
 

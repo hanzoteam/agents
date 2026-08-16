@@ -23,10 +23,10 @@ jest.mock('react-redux', () => ({
     useDispatch: () => mockDispatch,
 }));
 
-const postMessagePreviewMock = jest.fn<null, [{metadata: {post: {create_at?: number}}}]>(() => null);
+const mockPostMessagePreview = jest.fn<null, [{metadata: {post: {create_at?: number}}}]>(() => null);
 
 jest.mock('@/mm_webapp', () => ({
-    PostMessagePreview: (props: {metadata: {post: {create_at?: number}}}) => postMessagePreviewMock(props),
+    PostMessagePreview: (props: {metadata: {post: {create_at?: number}}}) => mockPostMessagePreview(props),
 }));
 
 const baseState = (posts: Record<string, {id: string; create_at: number}>) => ({
@@ -68,7 +68,7 @@ describe('PostPreview', () => {
             );
         });
 
-        const props = postMessagePreviewMock.mock.calls.at(-1)?.[0];
+        const props = mockPostMessagePreview.mock.calls.at(-1)?.[0];
         expect(props?.metadata.post.create_at).toBe(1700000000000);
     });
 
@@ -86,7 +86,7 @@ describe('PostPreview', () => {
             );
         });
 
-        const props = postMessagePreviewMock.mock.calls.at(-1)?.[0];
+        const props = mockPostMessagePreview.mock.calls.at(-1)?.[0];
         expect(props?.metadata.post.create_at).toBeUndefined();
     });
 

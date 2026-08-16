@@ -3,9 +3,9 @@
 
 import {useDispatch} from 'react-redux';
 
-import {selectPost, openRHS, selectRegularPost} from 'src/redux_actions';
+import {selectPost, openRHS, selectRegularPost} from '@/redux_actions';
 
-import {viewMyChannel} from 'src/client';
+import {viewMyChannel} from '@/client';
 
 import {isRHSCompatable} from './mm_webapp';
 

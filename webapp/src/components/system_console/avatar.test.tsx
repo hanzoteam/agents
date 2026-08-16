@@ -22,7 +22,7 @@ jest.mock('@/client', () => ({
     getBotProfilePictureUrl: jest.fn(),
 }));
 
-jest.mock('src/../../assets/bot_icon.png', () => 'placeholder-icon.png', {virtual: true});
+jest.mock('@/../../assets/bot_icon.png', () => 'placeholder-icon.png', {virtual: true});
 
 const {getBotProfilePictureUrl} = jest.requireMock('@/client') as {
     getBotProfilePictureUrl: jest.Mock<Promise<string>, [string]>;

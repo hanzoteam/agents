@@ -5,8 +5,8 @@ import {PlusIcon} from '@hanzoteam/compass-icons/components';
 import React from 'react';
 import styled from 'styled-components';
 
-import {PrimaryButton} from 'src/components/assets/buttons';
-import SparklesGraphic from 'src/components/assets/sparkles_graphic';
+import {PrimaryButton} from '@/components/assets/buttons';
+import SparklesGraphic from '@/components/assets/sparkles_graphic';
 
 import {PanelContainer} from './panel';
 
