@@ -30,7 +30,26 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o dist/plugin-linu
 FROM node:24.11-bookworm AS webapp
 COPY --from=manifest /src /src
 WORKDIR /src/webapp
-RUN npm ci --no-audit --no-fund && npm run build
+# The @hanzoteam packages live on the fabric's own registry, which is gated, so
+# the install needs a credential. It arrives as a BUILD SECRET rather than a
+# build-arg or an env: a secret is mounted for the life of one RUN and is never
+# a layer, whereas an ARG is recorded in the image's history for anyone who pulls
+# it. .npmrc names the registry (that is public information and is committed);
+# only the token comes from outside, and it is written to a file that exists
+# solely inside this layer's mount.
+#
+# The secret is OPTIONAL on purpose. buildkit answers an undeclared secret with
+# an empty file rather than an error, so a build with no credential still runs
+# and fails at the point that actually needs one — an unauthenticated fetch of a
+# gated package — instead of failing here with something that reads like a
+# Dockerfile bug. A checkout with no @hanzoteam dependency builds unchanged.
+RUN --mount=type=secret,id=REGISTRY_TOKEN \
+    if [ -s /run/secrets/REGISTRY_TOKEN ]; then \
+        printf '//api.hanzo.ai/v1/packages/hanzoteam/npm/:_authToken=%s\n' \
+            "$(cat /run/secrets/REGISTRY_TOKEN)" >> .npmrc; \
+    fi && \
+    npm ci --no-audit --no-fund && npm run build && \
+    sed -i '/_authToken/d' .npmrc
 
 # The layout is the one `make bundle` produces: everything under a single
 # directory named for the plugin id, which is what extractPlugin expects to

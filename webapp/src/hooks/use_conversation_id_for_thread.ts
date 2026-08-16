@@ -3,7 +3,7 @@
 
 import {useSelector} from 'react-redux';
 
-import {GlobalState} from '@mattermost/types/store';
+import {GlobalState} from '@hanzoteam/types/store';
 
 import {isValidId} from '@/utils/ids';
 

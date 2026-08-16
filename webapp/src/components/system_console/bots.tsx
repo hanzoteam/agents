@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import {PlusIcon} from '@mattermost/compass-icons/components';
+import {PlusIcon} from '@hanzoteam/compass-icons/components';
 import {FormattedMessage} from 'react-intl';
 
 import {TertiaryButton} from '../assets/buttons';

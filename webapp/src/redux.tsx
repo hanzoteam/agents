@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {combineReducers, Dispatch, Store, UnknownAction} from 'redux';
-import {GlobalState} from '@mattermost/types/store';
+import {GlobalState} from '@hanzoteam/types/store';
 
 import {makeCallsPostButtonClickedHandler} from './calls_button';
 import {getCustomPrompts as fetchCustomPromptsAPI, getCustomPromptPins} from './client';

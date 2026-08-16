@@ -5,7 +5,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import styled, {css} from 'styled-components';
 import {FormattedMessage} from 'react-intl';
 
-import {ChevronDownIcon, SendIcon} from '@mattermost/compass-icons/components';
+import {ChevronDownIcon, SendIcon} from '@hanzoteam/compass-icons/components';
 
 import {LLMBot} from '@/bots';
 

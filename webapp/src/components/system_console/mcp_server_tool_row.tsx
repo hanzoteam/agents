@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react';
 import styled from 'styled-components';
-import {ChevronDownIcon, ExclamationThickIcon} from '@mattermost/compass-icons/components';
+import {ChevronDownIcon, ExclamationThickIcon} from '@hanzoteam/compass-icons/components';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {PrimaryButton} from '../assets/buttons';

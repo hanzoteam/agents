@@ -4,7 +4,7 @@
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
-	  "@mattermost/types/*": ["node_modules/@mattermost/types/lib/*"]
+	  "@hanzoteam/types/*": ["node_modules/@hanzoteam/types/lib/*"]
     },
     "lib": [
       "dom",

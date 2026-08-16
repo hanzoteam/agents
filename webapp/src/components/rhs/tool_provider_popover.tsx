@@ -4,7 +4,7 @@
 import React, {useState, useCallback, useEffect} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {ChevronDownIcon, RefreshIcon} from '@mattermost/compass-icons/components';
+import {ChevronDownIcon, RefreshIcon} from '@hanzoteam/compass-icons/components';
 
 import {disconnectMCPOAuth, getUserMCPTools, refreshUserMCPTools, updateUserToolPreferences, type UserMCPServerInfo} from '@/client';
 import {EnabledMCPTool} from '@/bots';

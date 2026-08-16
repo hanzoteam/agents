@@ -5,9 +5,9 @@ import React from 'react';
 import {useSelector} from 'react-redux';
 import styled, {keyframes, css} from 'styled-components';
 
-import {GlobalState} from '@mattermost/types/store';
-import {Channel} from '@mattermost/types/channels';
-import {Team} from '@mattermost/types/teams';
+import {GlobalState} from '@hanzoteam/types/store';
+import {Channel} from '@hanzoteam/types/channels';
+import {Team} from '@hanzoteam/types/teams';
 
 import manifest from '@/manifest';
 

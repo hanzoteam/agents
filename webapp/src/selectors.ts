@@ -1,7 +1,7 @@
 // Copyright (c) 2023-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {GlobalState} from '@mattermost/types/store';
+import {GlobalState} from '@hanzoteam/types/store';
 
 import manifest from './manifest';
 import {CustomPrompt} from './types';

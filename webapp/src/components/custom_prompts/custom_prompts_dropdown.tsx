@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import {FormattedMessage} from 'react-intl';
 import {useSelector, useDispatch} from 'react-redux';
 
-import {CogOutlineIcon} from '@mattermost/compass-icons/components';
+import {CogOutlineIcon} from '@hanzoteam/compass-icons/components';
 
 import {getCustomPrompts} from '@/selectors';
 import {fetchCustomPrompts, ShowCustomPromptsModalHandler} from '@/redux';

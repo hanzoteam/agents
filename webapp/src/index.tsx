@@ -6,9 +6,9 @@ import {Store, UnknownAction} from 'redux';
 import styled from 'styled-components';
 import {FormattedMessage, createIntl} from 'react-intl';
 
-import {WebSocketMessage} from '@mattermost/client';
-import {GlobalState} from '@mattermost/types/store';
-import {CodeTagsIcon} from '@mattermost/compass-icons/components';
+import {BaseWebSocketMessage} from '@hanzoteam/client';
+import {GlobalState} from '@hanzoteam/types/store';
+import {CodeTagsIcon} from '@hanzoteam/compass-icons/components';
 
 //@ts-ignore it exists
 import aiIcon from '../../assets/bot_icon.png';
@@ -192,7 +192,7 @@ export default class Plugin {
         // Invalidate conversation cache when backend publishes conversation updates
         registry.registerWebSocketEventHandler(
             'custom_mattermost-ai_conversation_updated',
-            (msg: WebSocketMessage<{conversation_id: string}>) => {
+            (msg: BaseWebSocketMessage<string, {conversation_id: string}>) => {
                 invalidateConversation(msg.data.conversation_id);
             },
         );
@@ -200,7 +200,7 @@ export default class Plugin {
         // MCP OAuth connect/disconnect: refresh cached tool lists in open UI.
         registry.registerWebSocketEventHandler(
             'custom_mattermost-ai_mcp_connection_updated',
-            (msg: WebSocketMessage<MCPConnectionEvent>) => {
+            (msg: BaseWebSocketMessage<string, MCPConnectionEvent>) => {
                 notifyMCPConnectionUpdated(msg.data);
             },
         );

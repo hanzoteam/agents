@@ -4,9 +4,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import {FormattedMessage} from 'react-intl';
-import {ChevronDownIcon, LightbulbOutlineIcon} from '@mattermost/compass-icons/components';
+import {ChevronDownIcon, LightbulbOutlineIcon} from '@hanzoteam/compass-icons/components';
 import {useSelector} from 'react-redux';
-import {GlobalState} from '@mattermost/types/store';
+import {GlobalState} from '@hanzoteam/types/store';
 
 import {useBotlist} from '@/bots';
 import manifest from '../manifest';

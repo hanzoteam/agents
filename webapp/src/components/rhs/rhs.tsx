@@ -6,7 +6,7 @@ import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 
-import {GlobalState} from '@mattermost/types/store';
+import {GlobalState} from '@hanzoteam/types/store';
 
 import manifest from '@/manifest';
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2023-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ChevronDownIcon} from '@mattermost/compass-icons/components';
+import {ChevronDownIcon} from '@hanzoteam/compass-icons/components';
 import React from 'react';
 import styled from 'styled-components';
 import {FormattedMessage} from 'react-intl';

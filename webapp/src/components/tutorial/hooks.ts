@@ -3,9 +3,9 @@
 
 import {useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback} from 'react';
 import {useSelector} from 'react-redux';
-import {GlobalState} from '@mattermost/types/store';
-import {PreferenceType} from '@mattermost/types/preferences';
-import {Client4 as Client4Class} from '@mattermost/client';
+import {GlobalState} from '@hanzoteam/types/store';
+import {PreferenceType} from '@hanzoteam/types/preferences';
+import {Client4 as Client4Class} from '@hanzoteam/client';
 
 import {FINISHED, TTCategoriesMapToSteps} from './tours';
 

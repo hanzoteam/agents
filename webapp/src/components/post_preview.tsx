@@ -5,7 +5,7 @@ import React, {useEffect} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import styled from 'styled-components';
 
-import {GlobalState} from '@mattermost/types/store';
+import {GlobalState} from '@hanzoteam/types/store';
 
 import {PostMessagePreview} from '@/mm_webapp';
 import {getPost, getProfilesByIds} from '@/client';

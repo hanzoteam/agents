@@ -3,7 +3,7 @@
 
 import React, {useId, useState} from 'react';
 import styled from 'styled-components';
-import {ChevronDownIcon} from '@mattermost/compass-icons/components';
+import {ChevronDownIcon} from '@hanzoteam/compass-icons/components';
 import {useIntl} from 'react-intl';
 
 import {ToggleSwitch} from '../toggle_switch';

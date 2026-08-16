@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 import {useSelector, useDispatch} from 'react-redux';
 
-import {CloseIcon, PinOutlineIcon, PinIcon, PlusIcon, MagnifyIcon, ArrowLeftIcon} from '@mattermost/compass-icons/components';
+import {CloseIcon, PinOutlineIcon, PinIcon, PlusIcon, MagnifyIcon, ArrowLeftIcon} from '@hanzoteam/compass-icons/components';
 
 import {getCustomPrompts, getPinnedPromptIds, getShowCustomPromptsModal} from '@/selectors';
 import {fetchCustomPrompts, fetchPinnedPromptIds, ShowCustomPromptsModalHandler} from '@/redux';

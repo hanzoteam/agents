@@ -4,7 +4,7 @@
 import React from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {Post} from '@mattermost/types/posts';
+import {Post} from '@hanzoteam/types/posts';
 
 import styled from 'styled-components';
 

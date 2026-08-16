@@ -5,8 +5,8 @@ import {useEffect, useMemo, useCallback} from 'react';
 
 import {useDispatch, useSelector} from 'react-redux';
 
-import {GlobalState} from '@mattermost/types/store';
-import {PreferenceType} from '@mattermost/types/preferences';
+import {GlobalState} from '@hanzoteam/types/store';
+import {PreferenceType} from '@hanzoteam/types/preferences';
 
 import {getAIBots, savePreferences} from '@/client';
 

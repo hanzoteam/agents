@@ -4,7 +4,7 @@
 import React, {useRef} from 'react';
 import styled from 'styled-components';
 
-import {ChevronRightIcon} from '@mattermost/compass-icons/components';
+import {ChevronRightIcon} from '@hanzoteam/compass-icons/components';
 
 interface ReasoningDisplayProps {
     reasoningSummary: string;

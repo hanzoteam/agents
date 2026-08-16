@@ -5,7 +5,7 @@ import React, {useState, useEffect, useRef} from 'react';
 import styled from 'styled-components';
 import {useIntl, type IntlShape} from 'react-intl';
 
-import {TrashCanOutlineIcon, ChevronDownIcon, ChevronUpIcon} from '@mattermost/compass-icons/components';
+import {TrashCanOutlineIcon, ChevronDownIcon, ChevronUpIcon} from '@hanzoteam/compass-icons/components';
 
 import IconAI from '../assets/icon_ai';
 

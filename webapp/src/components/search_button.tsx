@@ -4,7 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
-import {GlobalState} from '@mattermost/types/store';
+import {GlobalState} from '@hanzoteam/types/store';
 
 import IconAI from '@/components/assets/icon_ai';
 import manifest from '../manifest';

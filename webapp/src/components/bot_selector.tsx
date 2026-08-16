@@ -6,7 +6,7 @@ import {FormattedMessage} from 'react-intl';
 
 import styled from 'styled-components';
 
-import {CheckIcon, ChevronDownIcon} from '@mattermost/compass-icons/components';
+import {CheckIcon, ChevronDownIcon} from '@hanzoteam/compass-icons/components';
 
 import {LLMBot} from '@/bots';
 

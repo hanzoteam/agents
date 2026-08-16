@@ -1,8 +1,8 @@
 // Copyright (c) 2023-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {ChannelSearchOpts, ChannelWithTeamData} from '@mattermost/types/channels';
-import type {OptsSignalExt} from '@mattermost/types/client4';
+import type {ChannelSearchOpts, ChannelWithTeamData} from '@hanzoteam/types/channels';
+import type {OptsSignalExt} from '@hanzoteam/types/client4';
 
 import type {ConversationResponse, Turn} from '@/types/conversation';
 
@@ -20,7 +20,7 @@ import {
 
 type SearchAllChannelsOpts = Omit<ChannelSearchOpts, 'page' | 'per_page'> & OptsSignalExt;
 
-jest.mock('@mattermost/client', () => {
+jest.mock('@hanzoteam/client', () => {
     const mockSearchAllChannels = jest.fn<
         Promise<ChannelWithTeamData[]>,
         [string, SearchAllChannelsOpts | undefined]
@@ -49,13 +49,13 @@ jest.mock('@mattermost/client', () => {
     };
 });
 
-const {mockSearchAllChannels} = jest.requireMock('@mattermost/client') as {
+const {mockSearchAllChannels} = jest.requireMock('@hanzoteam/client') as {
     mockSearchAllChannels: jest.MockedFunction<
         (term: string, opts?: SearchAllChannelsOpts) => Promise<ChannelWithTeamData[]>
     >;
 };
 
-const {mockUpdateThreadReadForUser} = jest.requireMock('@mattermost/client') as {
+const {mockUpdateThreadReadForUser} = jest.requireMock('@hanzoteam/client') as {
     mockUpdateThreadReadForUser: jest.MockedFunction<
         (userId: string, teamId: string, postId: string, timestamp: number) => Promise<void>
     >;

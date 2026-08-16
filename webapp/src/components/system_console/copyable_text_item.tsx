@@ -3,7 +3,7 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import styled from 'styled-components';
-import {CheckIcon, ContentCopyIcon} from '@mattermost/compass-icons/components';
+import {CheckIcon, ContentCopyIcon} from '@hanzoteam/compass-icons/components';
 import {useIntl} from 'react-intl';
 
 import {HelpText, ItemLabel, StyledInput, TextFieldContainer} from './item';

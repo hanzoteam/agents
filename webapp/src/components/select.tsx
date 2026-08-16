@@ -5,10 +5,10 @@ import React, {useState, useEffect, useCallback} from 'react';
 import styled from 'styled-components';
 import AsyncSelect from 'react-select/async';
 import {StylesConfig, MultiValue} from 'react-select';
-import {LockIcon, GlobeIcon} from '@mattermost/compass-icons/components';
+import {LockIcon, GlobeIcon} from '@hanzoteam/compass-icons/components';
 
-import {UserProfile} from '@mattermost/types/users';
-import {ChannelType, ChannelWithTeamData} from '@mattermost/types/channels';
+import {UserProfile} from '@hanzoteam/types/users';
+import {ChannelType, ChannelWithTeamData} from '@hanzoteam/types/channels';
 
 import {getAutocompleteAllUsers, getChannelById, getProfilePictureUrl, getProfilesByIds, getTeamIconUrl, getTeamsByIds, searchAllChannels, searchTeams} from '../client';
 

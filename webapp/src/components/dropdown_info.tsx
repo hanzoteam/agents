@@ -4,7 +4,7 @@
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import styled, {css} from 'styled-components';
-import {LightbulbOutlineIcon, ExclamationThickIcon} from '@mattermost/compass-icons/components';
+import {LightbulbOutlineIcon, ExclamationThickIcon} from '@hanzoteam/compass-icons/components';
 
 const DropdownMenuItemInfo = styled.div`
 	display: flex;

@@ -3,7 +3,7 @@
 
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import styled from 'styled-components';
-import {RefreshIcon, ExclamationThickIcon} from '@mattermost/compass-icons/components';
+import {RefreshIcon, ExclamationThickIcon} from '@hanzoteam/compass-icons/components';
 import {FormattedMessage, useIntl} from 'react-intl';
 
 import {TertiaryButton, SecondaryButton} from '../assets/buttons';

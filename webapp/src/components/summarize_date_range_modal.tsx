@@ -5,7 +5,7 @@ import React, {useEffect} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
 
-import {CloseIcon} from '@mattermost/compass-icons/components';
+import {CloseIcon} from '@hanzoteam/compass-icons/components';
 
 import {AnimatedModalShell, MODAL_SHEET_CLASS} from '@/components/animated_modal_shell';
 import {DatePicker} from '@/mm_webapp';

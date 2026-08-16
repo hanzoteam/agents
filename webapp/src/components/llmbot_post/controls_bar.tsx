@@ -5,7 +5,7 @@ import React from 'react';
 import {FormattedMessage} from 'react-intl';
 import styled from 'styled-components';
 
-import {SendIcon} from '@mattermost/compass-icons/components';
+import {SendIcon} from '@hanzoteam/compass-icons/components';
 
 import IconRegenerate from '../assets/icon_regenerate';
 import IconCancel from '../assets/icon_cancel';

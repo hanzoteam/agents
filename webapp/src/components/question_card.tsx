@@ -4,7 +4,7 @@
 import React, {useMemo, useState} from 'react';
 import styled from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {CheckIcon, CloseCircleOutlineIcon} from '@mattermost/compass-icons/components';
+import {CheckIcon, CloseCircleOutlineIcon} from '@hanzoteam/compass-icons/components';
 
 import {ToolCall, ToolCallStatus} from './tool_types';
 import LoadingSpinner from './assets/loading_spinner';

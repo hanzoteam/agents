@@ -28,7 +28,7 @@ jest.mock('react-intl', () => ({
     }),
 }));
 
-jest.mock('@mattermost/compass-icons/components', () => ({
+jest.mock('@hanzoteam/compass-icons/components', () => ({
     ChevronDownIcon: () => <span data-testid='chevron-icon'/>,
     RefreshIcon: () => <span data-testid='refresh-icon'/>,
 }));

@@ -8,7 +8,7 @@ import {
     DotsHorizontalIcon,
     PencilOutlineIcon,
     TrashCanOutlineIcon,
-} from '@mattermost/compass-icons/components';
+} from '@hanzoteam/compass-icons/components';
 //eslint-disable-next-line import/no-unresolved -- react-bootstrap is external
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 

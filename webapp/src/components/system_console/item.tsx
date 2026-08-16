@@ -4,7 +4,7 @@
 import React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 import {FormattedMessage, useIntl} from 'react-intl';
-import {ChevronDownIcon, CloseIcon} from '@mattermost/compass-icons/components';
+import {ChevronDownIcon, CloseIcon} from '@hanzoteam/compass-icons/components';
 import CreatableSelect from 'react-select/creatable';
 import {components, StylesConfig, SingleValue, type ClearIndicatorProps, type DropdownIndicatorProps} from 'react-select';
 

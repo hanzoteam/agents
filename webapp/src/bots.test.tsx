@@ -5,7 +5,7 @@ import React from 'react';
 import {Provider} from 'react-redux';
 import {createStore} from 'redux';
 import {renderHook, act} from '@testing-library/react';
-import {PreferenceType} from '@mattermost/types/preferences';
+import {PreferenceType} from '@hanzoteam/types/preferences';
 
 import {
     resolveActiveBot,

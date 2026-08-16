@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 import {useIntl} from 'react-intl';
 import styled from 'styled-components';
 
-import {LinkVariantIcon} from '@mattermost/compass-icons/components';
+import {LinkVariantIcon} from '@hanzoteam/compass-icons/components';
 
 import {CitationBase, CitationWrapper} from './citation_base';
 import {Annotation} from './types';

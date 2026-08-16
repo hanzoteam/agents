@@ -1,11 +1,12 @@
 // Copyright (c) 2023-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {Client4 as Client4Class, ClientError} from '@mattermost/client';
-import {ChannelWithTeamData} from '@mattermost/types/channels';
-import {PreferenceType} from '@mattermost/types/preferences';
+import {Client4 as Client4Class, ClientError} from '@hanzoteam/client';
+import {ChannelWithTeamData} from '@hanzoteam/types/channels';
+import {PreferenceType} from '@hanzoteam/types/preferences';
 
-import {NotPagedTeamSearchOpts, Team} from '@mattermost/types/teams';
+import {NotPagedTeamSearchOpts, Team} from '@hanzoteam/types/teams';
+import {UserProfile} from '@hanzoteam/types/users';
 
 import {PluginConfig} from '@/components/system_console/plugin_config_types';
 import type {ToolAnswer} from '@/components/tool_types';
@@ -497,7 +498,11 @@ export async function getAutocompleteAllUsers(name: string) {
     return Client4.autocompleteUsers(name, '', '');
 }
 
-export async function getProfilesByIds(userIds: string[]) {
+// The return type is stated rather than inferred: the empty-input branch yields
+// never[], so an inferred signature is the union `never[] | UserProfile[]`, and
+// a caller reaching for a generic method on that union (`profiles.reduce<T>`)
+// gets no overload and an implicitly-any parameter instead.
+export async function getProfilesByIds(userIds: string[]): Promise<UserProfile[]> {
     if (userIds.length === 0) {
         return [];
     }
@@ -528,7 +533,8 @@ export async function getChannelById(channelId: string): Promise<ChannelWithTeam
     };
 }
 
-export async function getTeamsByIds(teamIds: string[]) {
+// Stated for the same reason as getProfilesByIds above.
+export async function getTeamsByIds(teamIds: string[]): Promise<Team[]> {
     if (teamIds.length === 0) {
         return [];
     }
