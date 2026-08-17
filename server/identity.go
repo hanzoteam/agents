@@ -149,6 +149,45 @@ func ours(host string) bool {
 	return host == "hanzo.ai" || strings.HasSuffix(host, ".hanzo.ai")
 }
 
+// authorizationHeader is the one spelling this file compares and writes. Header
+// names are case-insensitive on the wire but a Go map is not, so an operator's
+// "authorization" and our "Authorization" would be two entries and the operator's
+// would lose — silently, to a credential they did not choose.
+const authorizationHeader = "Authorization"
+
+// ourMCP reports whether an MCP server is one of ours AND is carrying no
+// credential of its own. Both halves matter: an operator who wrote a header is
+// naming the identity they want, and an entry pointing somewhere else must never
+// see this workspace's token.
+func ourMCP(s config.MCPServerConfig) bool {
+	if !s.Enabled {
+		return false
+	}
+	for name, v := range s.Headers {
+		if strings.EqualFold(name, authorizationHeader) && strings.TrimSpace(v) != "" {
+			return false
+		}
+	}
+	// Static OAuth credentials are a credential too, and a fuller one — it
+	// refreshes itself. Leave that server entirely alone.
+	if s.ClientID != "" || s.ClientSecret != "" {
+		return false
+	}
+	u, err := url.Parse(s.BaseURL)
+	return err == nil && ours(u.Host)
+}
+
+// wantsOurToken reports whether any MCP server would take the workspace's token,
+// so the mint is skipped on a deployment where none would.
+func wantsOurToken(servers []config.MCPServerConfig) bool {
+	for _, s := range servers {
+		if ourMCP(s) {
+			return true
+		}
+	}
+	return false
+}
+
 // authenticate gives every Hanzo service that carries no key of its own the
 // workspace's current access token, and rebuilds the agents so they pick it up.
 //
@@ -177,6 +216,14 @@ func (p *Plugin) authenticate(ctx context.Context, ident *identity, botsService 
 			break
 		}
 	}
+	// A Hanzo MCP server wants the same identity for the same reason a Hanzo
+	// model does: the tools it exposes act on the workspace's org, and the org
+	// is a property of the bearer. A static token pasted into the header would
+	// work for a week and then stop, which is the failure this whole path exists
+	// to avoid.
+	if !wanted {
+		wanted = wantsOurToken(cfg.MCP.Servers)
+	}
 	if !wanted {
 		return nil
 	}
@@ -193,6 +240,16 @@ func (p *Plugin) authenticate(ctx context.Context, ident *identity, botsService 
 		if u, err := url.Parse(cfg.Services[i].APIURL); err == nil && ours(u.Host) {
 			cfg.Services[i].APIKey = token
 		}
+	}
+
+	for i := range cfg.MCP.Servers {
+		if !ourMCP(cfg.MCP.Servers[i]) {
+			continue
+		}
+		if cfg.MCP.Servers[i].Headers == nil {
+			cfg.MCP.Servers[i].Headers = map[string]string{}
+		}
+		cfg.MCP.Servers[i].Headers[authorizationHeader] = "Bearer " + token
 	}
 
 	// Without notifying: the listeners rebuild bots, and this is called from

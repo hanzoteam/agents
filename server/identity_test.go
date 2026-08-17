@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-agents/v2/config"
 )
 
 func TestOurs(t *testing.T) {
@@ -128,4 +130,64 @@ func TestToken(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "held", again)
 	})
+}
+
+// ourMCP decides where this workspace's identity is allowed to go, so the cases
+// that must be FALSE carry the weight: each one is a token handed to somebody
+// who did not ask for it, or over an operator who did.
+func TestOurMCP(t *testing.T) {
+	ours := func(m ...func(*config.MCPServerConfig)) config.MCPServerConfig {
+		s := config.MCPServerConfig{Name: "fleet", Enabled: true, BaseURL: "https://api.hanzo.ai/v1/mcp"}
+		for _, f := range m {
+			f(&s)
+		}
+		return s
+	}
+
+	require.True(t, ourMCP(ours()), "an enabled Hanzo server carrying no credential takes ours")
+
+	t.Run("somebody else's endpoint never sees it", func(t *testing.T) {
+		for _, u := range []string{
+			"https://api.openai.com/v1/mcp",
+			"https://api.hanzo.ai.attacker.io/mcp",
+			"https://nothanzo.ai/mcp",
+			"://not a url",
+			"",
+		} {
+			require.False(t, ourMCP(ours(func(s *config.MCPServerConfig) { s.BaseURL = u })), "baseURL %q", u)
+		}
+	})
+
+	t.Run("an operator's own credential wins", func(t *testing.T) {
+		// Including the spelling a person is most likely to type. Header names are
+		// case-insensitive on the wire and a Go map is not, so a case-sensitive
+		// check would leave their header in place AND add ours beside it.
+		for _, name := range []string{"Authorization", "authorization", "AUTHORIZATION"} {
+			s := ours(func(s *config.MCPServerConfig) { s.Headers = map[string]string{name: "Bearer theirs"} })
+			require.False(t, ourMCP(s), "header %q", name)
+		}
+		// Static OAuth is a credential too, and one that refreshes itself.
+		require.False(t, ourMCP(ours(func(s *config.MCPServerConfig) { s.ClientID = "id" })))
+		require.False(t, ourMCP(ours(func(s *config.MCPServerConfig) { s.ClientSecret = "secret" })))
+	})
+
+	t.Run("an empty header is not a credential", func(t *testing.T) {
+		for _, v := range []string{"", "   "} {
+			s := ours(func(s *config.MCPServerConfig) { s.Headers = map[string]string{"Authorization": v} })
+			require.True(t, ourMCP(s), "value %q should be treated as absent", v)
+		}
+	})
+
+	require.False(t, ourMCP(ours(func(s *config.MCPServerConfig) { s.Enabled = false })), "a disabled server is not configured")
+}
+
+func TestWantsOurToken(t *testing.T) {
+	require.False(t, wantsOurToken(nil), "no servers, nothing to mint for")
+	require.False(t, wantsOurToken([]config.MCPServerConfig{
+		{Name: "elsewhere", Enabled: true, BaseURL: "https://api.openai.com/v1/mcp"},
+	}))
+	require.True(t, wantsOurToken([]config.MCPServerConfig{
+		{Name: "elsewhere", Enabled: true, BaseURL: "https://api.openai.com/v1/mcp"},
+		{Name: "fleet", Enabled: true, BaseURL: "https://api.hanzo.ai/v1/mcp"},
+	}), "one qualifying server is enough")
 }
