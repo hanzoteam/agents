@@ -314,8 +314,18 @@ export async function viewMyChannel(channelID: string) {
 }
 
 export async function getAIDirectChannel(currentUserId: string) {
-    const botUser = await Client4.getUserByUsername('ai');
-    const dm = await Client4.createDirectChannel([currentUserId, botUser.id]);
+    // The server owns the roster: the default agent arrives first and marked,
+    // with its DM channel when one exists. Asking for a hardcoded username
+    // 404'd every boot in a workspace whose flagship carries any other name.
+    const {bots} = await getAIBots();
+    const bot = bots?.find((b: {isDefault?: boolean}) => b.isDefault) ?? bots?.[0];
+    if (!bot) {
+        throw new Error('no agents available');
+    }
+    if (bot.dmChannelID) {
+        return bot.dmChannelID;
+    }
+    const dm = await Client4.createDirectChannel([currentUserId, bot.id]);
     return dm.id;
 }
 
