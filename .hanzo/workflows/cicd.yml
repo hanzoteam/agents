@@ -19,5 +19,5 @@ jobs:
     # same commit built green on one runner and failed on another, because one
     # of them was replaying a copy of v1 from before the package credential
     # existed. A commit cannot move, so a cache of it cannot be stale.
-    uses: hanzoai/ci/.hanzo/workflows/build.yml@8a512481bec026ffad9289e96a246240de072df5
+    uses: hanzoai/ci/.hanzo/workflows/build.yml@v1
     secrets: inherit
